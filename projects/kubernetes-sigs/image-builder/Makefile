@@ -83,12 +83,14 @@ setup-bottlerocket:
 	build/setup_bottlerocket.sh $(BOTTLEROCKET_DOWNLOAD_PATH) $(CARGO_HOME)
 
 .PHONY: deps-ami
-deps-ami: setup-image-builder
-	make -C $(IMAGE_BUILDER_DIR) deps-ami
+deps-ami: MAKEFLAGS=
+deps-ami: $(GIT_PATCH_TARGET)
+	$(MAKE) -C $(IMAGE_BUILDER_DIR) deps-ami
 
 .PHONY: deps-ova
-deps-ova: setup-image-builder
-	make -C $(IMAGE_BUILDER_DIR) deps-ova
+deps-ova: MAKEFLAGS=
+deps-ova: $(GIT_PATCH_TARGET)
+	$(MAKE) -C $(IMAGE_BUILDER_DIR) deps-ova
 
 ## --------------------------------------
 ## Help
@@ -97,35 +99,25 @@ deps-ova: setup-image-builder
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-35s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+.PHONY: build-ami-ubuntu-2004
+build-ami-ubuntu-2004: MAKEFLAGS=
+build-ami-ubuntu-2004: PACKER_TYPE_VAR_FILES=$(PACKER_AMI_VAR_FILES)
+build-ami-ubuntu-2004: setup-ami-share deps-ami setup-packer-configs
+	PACKER_VAR_FILES="$(PACKER_VAR_FILES)" $(MAKE) -C $(IMAGE_BUILDER_DIR) validate-ami-ubuntu-2004
 
-.PHONY: upload-artifacts-%
-upload-artifacts-%:
-	build/upload_artifacts.sh $(OVA_PATH) $(ARTIFACTS_BUCKET) $(PROJECT_PATH)/$* $(CODEBUILD_BUILD_NUMBER) $(CODEBUILD_RESOLVED_SOURCE_VERSION) $(LATEST_TAG)
+.PHONY: release-ami-ubuntu-2004
+release-ami-ubuntu-2004: MAKEFLAGS=
+release-ami-ubuntu-2004: PACKER_TYPE_VAR_FILES=$(PACKER_AMI_VAR_FILES)
+release-ami-ubuntu-2004-%: setup-ami-share deps-ami setup-packer-configs
+	PACKER_VAR_FILES="$(PACKER_VAR_FILES)" $(MAKE) -C $(IMAGE_BUILDER_DIR) build-ami-ubuntu-2004
 
-.PHONY: setup-packer-configs-%
-setup-packer-configs-%:
-	build/setup_packer_configs.sh $* $(ARTIFACTS_BUCKET) $(OVA_PATH) $(ADDITIONAL_PAUSE_$*_FROM)
-
-.PHONY: build-ami-ubuntu-2004-%
-build-ami-ubuntu-2004-%: setup-ami-share deps-ami setup-packer-configs-%
-	PACKER_VAR_FILES="$(OUTPUT_DIRECTORY)/$*/config/kubernetes.json $(PACKER_AMI_VAR_FILES) $(OUTPUT_DIRECTORY)/$*/config/common.json $(OUTPUT_DIRECTORY)/$*/config/cni.json $(OUTPUT_DIRECTORY)/$*/config/additional_components.json" \
-		make -C $(IMAGE_BUILDER_DIR) validate-ami-ubuntu-2004
-
-.PHONY: build
-build: ## Validate configs for all versions of kubernetes
-build: $(BUILD_TARGETS)
-
-.PHONY: release-ami-ubuntu-2004-%
-release-ami-ubuntu-2004-%: setup-ami-share deps-ami setup-packer-configs-%
-	PACKER_VAR_FILES="$(OUTPUT_DIRECTORY)/$*/config/kubernetes.json $(PACKER_AMI_VAR_FILES) $(OUTPUT_DIRECTORY)/$*/config/common.json $(OUTPUT_DIRECTORY)/$*/config/cni.json $(OUTPUT_DIRECTORY)/$*/config/additional_components.json" \
-		make -C $(IMAGE_BUILDER_DIR) build-ami-ubuntu-2004
-
-.PHONY: release-ova-ubuntu-2004-%
-release-ova-ubuntu-2004-%: deps-ova setup-vsphere setup-packer-configs-%
-	PACKER_FLAGS="-force" PACKER_LOG=1 PACKER_LOG_PATH=$(OVA_PATH)/packer.log PACKER_VAR_FILES="$(OUTPUT_DIRECTORY)/$*/config/kubernetes.json $(PACKER_OVA_VAR_FILES) $(OUTPUT_DIRECTORY)/$*/config/common.json $(OUTPUT_DIRECTORY)/$*/config/cni.json $(OUTPUT_DIRECTORY)/$*/config/additional_components.json" \
-		OVF_CUSTOM_PROPERTIES="$(OUTPUT_DIRECTORY)/$*/config/ovf_custom_properties.json" \
-		make -C $(IMAGE_BUILDER_DIR) build-node-ova-vsphere-ubuntu-2004
-	build/get_artifacts.sh $(IMAGE_BUILDER_DIR) ubuntu
+.PHONY: release-ova-ubuntu-2004
+release-ova-ubuntu-2004: MAKEFLAGS=
+release-ova-ubuntu-2004: PACKER_TYPE_VAR_FILES=$(PACKER_OVA_VAR_FILES)
+release-ova-ubuntu-2004: deps-ova setup-vsphere setup-packer-configs
+	PACKER_FLAGS="-force" PACKER_LOG=1 PACKER_LOG_PATH=$(ARTIFACTS_PATH)/packer.log PACKER_VAR_FILES="$(PACKER_VAR_FILES)" \
+		OVF_CUSTOM_PROPERTIES="$(FULL_OUTPUT_DIR)/config/ovf_custom_properties.json" \
+		$(MAKE) -C $(IMAGE_BUILDER_DIR) build-node-ova-vsphere-ubuntu-2004
 
 .PHONY: release-upload-ova-ubuntu-2004-%
 release-upload-ova-ubuntu-2004-%: 
