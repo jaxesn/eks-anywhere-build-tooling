@@ -15,7 +15,7 @@
 
 # Taken from https://github.com/aws/eks-distro-build-tooling/blob/main/builder-base/install.sh
 # TODO: introduce a shared scripts repo to better share things like this
-set -x
+
 set -o errexit
 set -o nounset
 set -o pipefail
