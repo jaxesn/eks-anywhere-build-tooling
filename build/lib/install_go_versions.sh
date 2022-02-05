@@ -15,24 +15,34 @@
 
 # Taken from https://github.com/aws/eks-distro-build-tooling/blob/main/builder-base/install.sh
 # TODO: introduce a shared scripts repo to better share things like this
-
+set -x
 set -o errexit
 set -o nounset
 set -o pipefail
 
 setupgo() {
     local -r version=$1
-    go get golang.org/dl/go${version}
+    local -r force_amd=$2
+    local -r sdk_path=${HOME}/sdk/go${version}
+
+    go install golang.org/dl/go${version}@latest
+    if [ ! -f ${sdk_path}/.unpacked-success ]; then
+        if $force_amd && [ $(go env GOHOSTOS) == 'darwin' ] && [ $(go env GOHOSTARCH) == 'arm64' ]; then
+            # older builds do not have a arm variant for mac, using amd instead
+            mkdir -p ${sdk_path}
+            curl https://dl.google.com/go/go${version}.darwin-amd64.tar.gz | tar -xz --strip-components=1 -C ${sdk_path}
+            touch ${sdk_path}/.unpacked-success
+        fi
+    fi
     go${version} download
     # Removing the patch number as we only care about the minor version of golang
     local -r majorversion=${version%.*}
     mkdir -p ${GOPATH}/go${majorversion}/bin
     ln -sf ${GOPATH}/bin/go${version} ${GOPATH}/go${majorversion}/bin/go
-    ln -sf ${HOME}/sdk/go${version}/bin/gofmt ${GOPATH}/go${majorversion}/bin/gofmt
+    ln -sf ${sdk_path}/bin/gofmt ${GOPATH}/go${majorversion}/bin/gofmt
 }
-
-setupgo "${GOLANG113_VERSION:-1.13.15}"
-setupgo "${GOLANG114_VERSION:-1.14.15}"
-setupgo "${GOLANG115_VERSION:-1.15.15}"
-setupgo "${GOLANG116_VERSION:-1.16.12}"
-setupgo "${GOLANG116_VERSION:-1.17.5}"
+setupgo "${GOLANG116_VERSION:-1.17.5}" false
+setupgo "${GOLANG116_VERSION:-1.16.12}" false
+setupgo "${GOLANG115_VERSION:-1.15.15}" true
+setupgo "${GOLANG114_VERSION:-1.14.15}" true
+setupgo "${GOLANG113_VERSION:-1.13.15}" true
