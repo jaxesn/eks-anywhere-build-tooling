@@ -1,0 +1,1 @@
+make-test /projects/aws/make-test/_output/ ./cmd/foo ./cmd/bar . 1.17

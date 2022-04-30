@@ -1,0 +1,4 @@
+BINARY_TARGET_FILES:=foo
+IMAGE_NAMES:=
+HAS_S3_ARTIFACTS:=true
+ARTIFACTS_PATH:=/some/custom/path

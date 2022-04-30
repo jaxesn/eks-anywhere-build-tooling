@@ -1,0 +1,2 @@
+/projects/aws/make-test make-test fake-tag 1.17
+/projects/aws/make-test make-test fake-tag 1.17 ./test/e2e

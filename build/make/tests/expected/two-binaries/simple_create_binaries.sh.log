@@ -1,0 +1,2 @@
+/projects/aws/make-test /projects/aws/make-test/_output/bin/make-test/linux-amd64/ make-test 1.17 linux/amd64 ./cmd/foo ./cmd/bar build -s -w -buildid= -extldflags -static 0 . foo bar
+/projects/aws/make-test /projects/aws/make-test/_output/bin/make-test/linux-arm64/ make-test 1.17 linux/arm64 ./cmd/foo ./cmd/bar build -s -w -buildid= -extldflags -static 0 . foo bar

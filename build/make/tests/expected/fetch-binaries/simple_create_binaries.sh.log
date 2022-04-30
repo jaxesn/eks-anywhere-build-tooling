@@ -1,0 +1,2 @@
+/projects/aws/make-test /projects/aws/make-test/_output/bin/make-test/linux-amd64/foo make-test 1.17 linux/amd64 . build -s -w -buildid= -extldflags -static 0 . foo
+/projects/aws/make-test /projects/aws/make-test/_output/bin/make-test/linux-arm64/foo make-test 1.17 linux/arm64 . build -s -w -buildid= -extldflags -static 0 . foo
