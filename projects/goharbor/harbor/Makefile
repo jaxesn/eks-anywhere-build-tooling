@@ -49,7 +49,8 @@ GO_MOD_PATHS=src src src src src src
 HARBOR_BASE_NAMESPACE=goharbor
 IMAGE_BUILD_ARGS=HARBOR_BASE_NAMESPACE
 
-FETCH_BINARIES_TARGETS=eksa/distribution/distribution
+PROJECT_DEPENDENCIES=eksa/distribution/distribution
+
 FIX_LICENSES_XEIPUUV_TARGET=$(REPO)/vendor/github.com/xeipuuv/gojsonpointer/LICENSE.txt
 
 HAS_HELM_CHART=true
@@ -115,8 +116,6 @@ $(OUTPUT_DIR)/$(REPO): $(GIT_PATCH_TARGET)
 
 %/harbor-core: EXTRA_GO_LDFLAGS=-X $(PKG_PATH)/version.GitCommit=$(GITCOMMIT) -X $(PKG_PATH)/version.ReleaseVersion=$(RELEASEVERSION)
 
-$(call IMAGE_TARGETS_FOR_NAME, harbor-registry): $(call FULL_FETCH_BINARIES_TARGETS, $(FETCH_BINARIES_TARGETS))
-$(call IMAGE_TARGETS_FOR_NAME, harbor-registryctl): $(call FULL_FETCH_BINARIES_TARGETS, $(FETCH_BINARIES_TARGETS))
 $(call IMAGE_TARGETS_FOR_NAME, harbor-portal): clean-go-cache
 
 # space is very limited in presubmit jobs, the image builds can push the total used space over the limit
