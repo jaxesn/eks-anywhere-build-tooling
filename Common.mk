@@ -87,6 +87,7 @@ ifneq ($(and $(IS_RELEASE_BRANCH_BUILD),$(or $(RELEASE_BRANCH),$(IS_UNRELEASE_BR
 
 	# Deps are always released branched
 	BINARY_DEPS_DIR?=_output/$(RELEASE_BRANCH)/dependencies
+	BUILT_BINARY_DEPS_DIR?=_output/$(RELEASE_BRANCH)/built-dependencies
 
 	# include release branch info in latest tag
 	LATEST_TAG?=$(GIT_TAG)-$(LATEST)
@@ -206,18 +207,33 @@ IF_OVERRIDE_VARIABLE=$(if $(filter undefined,$(origin $1)),$(2),$(value $(1)))
 # $1 - image name
 IMAGE_TARGETS_FOR_NAME=$(addsuffix /images/push, $(1)) $(addsuffix /images/amd64, $(1)) $(addsuffix /images/arm64, $(1))
 
-# $1 - binary file name
-FULL_FETCH_BINARIES_TARGETS=$(foreach platform,$(BINARY_PLATFORMS),$(addprefix $(BINARY_DEPS_DIR)/$(subst /,-,$(platform))/, $(1)))
+# $1 - dependency project path
+FULL_FETCH_BINARIES_TARGET=$(foreach platform,$(BINARY_PLATFORMS),$(addprefix $(BINARY_DEPS_DIR)/$(subst /,-,$(platform))/, $(1)))
+
+# $1 - dependency project path
+# this will add global vars that are meant to only be valid during the current macro call
+# the same vars will be overwritten by the next call
+SETUP_PROJECT_PATHS= $(eval project_path_parts:=$(subst /, ,$(1))) \
+	$(eval rel_path:=$(word 2,$(project_path_parts))/$(word 3,$(project_path_parts))) \
+	$(eval project_path:=$(BASE_DIRECTORY)/projects/$(rel_path))
+
+# $1 - dependency project path
+BUILT_BINARY_DEPS_TARGET= $(if $(findstring eksd,$(1)),, \
+		$(call SETUP_PROJECT_PATHS,$(1)) \
+		$(eval dep_tar_prefix:=$(shell $(MAKE) -C $(project_path) var-value-TAR_FILE_PREFIX)) \
+		$(eval dep_git_tag:=$(shell $(MAKE) -C $(project_path) var-value-GIT_TAG)) \
+		$(foreach platform,$(BINARY_PLATFORMS), \
+			$(BUILT_BINARY_DEPS_DIR)/$(subst /,-,$(platform))/$(1)/$(dep_tar_prefix)-$(subst /,-,$(platform))-$(dep_git_tag).tar.gz) \
+	)
 
 # Based on PROJECT_DEPENDENCIES, generate fetch binaries targets, only projects with s3 artifacts will be fetched
 PROJECT_DEPENDENCIES_TARGETS=$(foreach dep,$(PROJECT_DEPENDENCIES), \
-	$(eval project_path_parts:=$(subst /, ,$(dep))) \
-	$(eval project_path:=$(BASE_DIRECTORY)/projects/$(word 2,$(project_path_parts))/$(word 3,$(project_path_parts))) \
 	$(if $(or $(findstring eksd,$(dep)), \
 		$(and \
+			$(call SETUP_PROJECT_PATHS,$(dep)) \
 			$(if $(wildcard $(project_path)),true,$(error Non-existent dependency: $(dep))), \
 			$(filter true,$(shell $(MAKE) -C $(project_path) var-value-HAS_S3_ARTIFACTS)) \
-		)),$(call FULL_FETCH_BINARIES_TARGETS,$(dep)),))
+		)),$(call FULL_FETCH_BINARIES_TARGET,$(dep)),))
 
 # $1 - targets
 # $2 - platforms
@@ -347,7 +363,7 @@ GOBUILD_COMMAND?=build
 
 ############### BINARIES DEPS ######################
 BINARY_DEPS_DIR?=$(OUTPUT_DIR)/dependencies
-FETCH_BINARIES_TARGETS?=
+BUILT_BINARY_DEPS_DIR?=$(OUTPUT_DIR)/built-dependencies
 PROJECT_DEPENDENCIES?=
 HANDLE_DEPENDENCIES_TARGET=handle-dependencies
 ####################################################
@@ -375,7 +391,7 @@ IMAGE_OS?=
 #################### OTHER #########################
 KUSTOMIZE_TARGET=$(OUTPUT_DIR)/kustomize
 GIT_DEPS_DIR?=$(OUTPUT_DIR)/gitdependencies
-SPECIAL_TARGET_SECONDARY=$(strip $(call FULL_FETCH_BINARIES_TARGETS, $(FETCH_BINARIES_TARGETS)) $(GO_MOD_DOWNLOAD_TARGETS))
+SPECIAL_TARGET_SECONDARY=$(strip $(call PROJECT_DEPENDENCIES_TARGETS)) $(GO_MOD_DOWNLOAD_TARGETS) $(foreach dep,$(PROJECT_DEPENDENCIES),$(call BUILT_BINARY_DEPS_TARGET,$(dep)))
 SKIP_CHECKSUM_VALIDATION?=false
 ####################################################
 
@@ -664,13 +680,19 @@ helm/build: $(if $(wildcard $(MAKE_ROOT)/helm/patches),$(HELM_GIT_PATCH_TARGET),
 helm/push: helm/build
 	$(BUILD_LIB)/helm_push.sh $(IMAGE_REPO) $(HELM_DESTINATION_REPOSITORY) $(IMAGE_TAG) $(OUTPUT_DIR)
 
-## Fetch Binary Targets
+# Handle dependencies targets, for now this is just fetching or build binaries
 .PHONY: handle-dependencies 
 handle-dependencies: $(call PROJECT_DEPENDENCIES_TARGETS)
 
-$(BINARY_DEPS_DIR)/linux-%:
-	$(BUILD_LIB)/fetch_binaries.sh $(BINARY_DEPS_DIR) $* $(ARTIFACTS_BUCKET) $(LATEST) $(RELEASE_BRANCH)
+## Fetch Binary Targets
+$(BINARY_DEPS_DIR)/linux-%: MAKEFLAGS=
+$(BINARY_DEPS_DIR)/linux-%: DEPENDENCY_PATH=$(subst arm64/,,$(subst amd64/,,$*))
+$(BINARY_DEPS_DIR)/linux-%: $$(call BUILT_BINARY_DEPS_TARGET,$$(DEPENDENCY_PATH))	
+	$(BUILD_LIB)/fetch_binaries.sh $(BINARY_DEPS_DIR) $(BUILT_BINARY_DEPS_DIR) $* $(ARTIFACTS_BUCKET) $(LATEST) $(RELEASE_BRANCH)
 
+$(BUILT_BINARY_DEPS_DIR)/linux-%:
+	$(error $(basename $(dir $(@D))))
+	$(MAKE) -C $(BASE_DIRECTORY)/projects/$(notdir $(dir $(@D)))/$(notdir $(@D)) tarballs ARTIFACTS_PATH=$(MAKE_ROOT)/$(@D) BINARY_PLATFORMS=linux/$(firstword $(subst /, ,$*))
 
 ## Build Targets
 .PHONY: build
@@ -713,7 +735,7 @@ add-generated-help-block: # Add or update generated help block to document proje
 add-generated-help-block:
 	$(BUILD_LIB)/generate_help_body.sh $(MAKE_ROOT) "$(BINARY_TARGET_FILES)" "$(BINARY_PLATFORMS)" "${BINARY_TARGETS}" \
 		$(REPO) $(if $(PATCHES_DIR),true,false) "$(LOCAL_IMAGE_TARGETS)" "$(IMAGE_TARGETS)" "$(BUILD_TARGETS)" "$(RELEASE_TARGETS)" \
-		"$(HAS_S3_ARTIFACTS)" "$(HAS_LICENSES)" "$(REPO_NO_CLONE)" "$(call FULL_FETCH_BINARIES_TARGETS,$(FETCH_BINARIES_TARGETS))" \
+		"$(HAS_S3_ARTIFACTS)" "$(HAS_LICENSES)" "$(REPO_NO_CLONE)" "$(call PROJECT_DEPENDENCIES_TARGETS)" \
 		"$(HAS_HELM_CHART)"
 
 ## --------------------------------------

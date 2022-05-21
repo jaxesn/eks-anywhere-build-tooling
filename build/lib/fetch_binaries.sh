@@ -23,10 +23,11 @@ SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 source "${SCRIPT_ROOT}/common.sh"
 
 BINARY_DEPS_DIR="$1" 
-DEP="$2"
-ARTIFACTS_BUCKET="$3"
-LATEST_TAG="$4"
-RELEASE_BRANCH="${5-$(build::eksd_releases::get_release_branch)}"
+BUILT_BINARY_DEPS_DIR="$2"
+DEP="$3"
+ARTIFACTS_BUCKET="$4"
+LATEST_TAG="$5"
+RELEASE_BRANCH="${6-$(build::eksd_releases::get_release_branch)}"
 
 DEP=${DEP#"$BINARY_DEPS_DIR"}
 OS_ARCH="$(cut -d '/' -f1 <<< ${DEP})"
@@ -70,11 +71,19 @@ fi
 DOWNLOAD_DIR=$(mktemp -d)
 trap "rm -rf $DOWNLOAD_DIR" EXIT
 
-wget -q --retry-connrefused $URL $URL.sha256 -P $DOWNLOAD_DIR
-(cd $DOWNLOAD_DIR && sha256sum -c *.sha256)
+FILENAME=$(basename $URL)
+
+BUILT_FILE_PATH=$BUILT_BINARY_DEPS_DIR/$OS_ARCH/$PRODUCT/$REPO_OWNER/$REPO/$FILENAME
+
+if [[ -f $BUILT_FILE_PATH ]]; then
+    cp $BUILT_FILE_PATH $BUILT_FILE_PATH.sha256 $DOWNLOAD_DIR
+else
+    wget -q --retry-connrefused $URL $URL.sha256 -P $DOWNLOAD_DIR    
+    (cd $DOWNLOAD_DIR && sha256sum -c $FILENAME.sha256)
+fi
 
 if [[ $REPO == *.tar.gz ]]; then
-    mv $DOWNLOAD_DIR/*.tar.gz $OUTPUT_DIR_FILE
+    mv $DOWNLOAD_DIR/$FILENAME $OUTPUT_DIR_FILE
 else
-    tar xzf $DOWNLOAD_DIR/*.tar.gz -C $OUTPUT_DIR_FILE
+    tar xzf $DOWNLOAD_DIR/$FILENAME -C $OUTPUT_DIR_FILE
 fi
