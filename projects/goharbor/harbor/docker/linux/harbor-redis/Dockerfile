@@ -13,10 +13,23 @@ RUN set -x \
     && remove_package systemd true \
     && cleanup "redis"
 
+
+################ Validate #######################
+FROM redis-builder as run_validate
+
+RUN set -x && \
+    validate_libraries && \
+    validate_symlinks && \
+    touch /tmp/validate-success
+
+
 FROM $BASE_IMAGE
 
 COPY --from=redis-builder /newroot/ /
 COPY --chown=redis:redis _output/harbor-redis _output/LICENSES ATTRIBUTION.txt /
+
+# ensure run_validate stage runs
+COPY --from=run_validate /tmp/validate-success /dev/null
 
 VOLUME /var/lib/redis
 WORKDIR /var/lib/redis

@@ -1,4 +1,4 @@
-ARG BASE_IMAGE # https://gallery.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base
+ARG BASE_IMAGE # https://gallery.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-glibc
 ARG BUILDER_IMAGE
 
 FROM $BUILDER_IMAGE as ipmitool-builder
@@ -31,7 +31,17 @@ WORKDIR /newroot
 
 RUN set -x && \
     clean_install "openssl-libs ncurses-libs readline" && \
-    cleanup "glibc"
+    cleanup "ipmitool"
+
+
+################ Validate #######################
+FROM ipmitool-builder as run_validate
+
+RUN set -x && \
+    validate_libraries && \
+    validate_symlinks && \
+    touch /tmp/validate-success
+
 
 FROM $BASE_IMAGE
 
@@ -45,6 +55,9 @@ COPY _output/dependencies/$TARGETOS-$TARGETARCH/eksa/grpc-ecosystem/grpc-health-
 COPY _output/bin/pbnj/$TARGETOS-$TARGETARCH/pbnj /usr/bin/pbnj
 COPY _output/LICENSES /LICENSES
 COPY ATTRIBUTION.txt /ATTRIBUTION.txt
+
+# ensure run_validate stage runs
+COPY --from=run_validate /tmp/validate-success /dev/null
 
 ENV GIN_MODE release
 USER pbnj

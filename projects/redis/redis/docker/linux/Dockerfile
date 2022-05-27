@@ -28,11 +28,24 @@ RUN set -x && \
 RUN set -x && \
     sed -i -e 's/^logfile .*/logfile ""/' /newroot/etc/redis/redis.conf
 
+
+################ Validate #######################
+FROM redis-builder as run_validate
+
+RUN set -x && \
+    validate_libraries && \
+    validate_symlinks && \
+    touch /tmp/validate-success
+
+
 FROM $BASE_IMAGE
 ARG IMAGE_TAG=not-set
 ENV REDIS_VERSION $IMAGE_TAG
 
 COPY --from=redis-builder /newroot /
+
+# ensure run_validate stage runs
+COPY --from=run_validate /tmp/validate-success /dev/null
 
 WORKDIR /
 

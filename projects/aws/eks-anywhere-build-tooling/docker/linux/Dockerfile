@@ -12,6 +12,16 @@ RUN set -x && \
     cd /newroot && \
     rpm2cpio /tmp/downloads/coreutils*.rpm | cpio -idv ./usr/bin/sleep
 
+
+################ Validate #######################
+FROM builder as run_validate
+
+RUN set -x && \
+    validate_libraries && \
+    validate_symlinks && \
+    touch /tmp/validate-success
+
+
 FROM $BASE_IMAGE
 ARG TARGETARCH
 ARG TARGETOS
@@ -24,5 +34,8 @@ ARG EKS_A_TOOL_LICENSE_DIR=/eks-a-tools/licenses
 COPY --from=builder /newroot/usr/bin/sleep /usr/bin/
 COPY ./_output/dependencies/$TARGETOS-$TARGETARCH/eks-a-tools/binary $EKS_A_TOOL_BINARY_DIR
 COPY ./_output/dependencies/$TARGETOS-$TARGETARCH/eks-a-tools/licenses $EKS_A_TOOL_LICENSE_DIR
+
+# ensure run_validate stage runs
+COPY --from=run_validate /tmp/validate-success /dev/null
 
 ENV PATH="${EKS_A_TOOL_BINARY_DIR}:${PATH}"
