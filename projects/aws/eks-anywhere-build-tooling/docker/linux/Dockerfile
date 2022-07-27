@@ -8,9 +8,8 @@ FROM $BUILDER_IMAGE as builder
 # manually installing sleep from the rpm
 # sleep only depends on glibc so there are no additional deps needed
 RUN set -x && \
-    yumdownloader --destdir=/tmp/downloads coreutils && \
-    cd /newroot && \
-    rpm2cpio /tmp/downloads/coreutils*.rpm | cpio -idv ./usr/bin/sleep
+    install_binary /usr/bin/sleep && \
+    cleanup "sleep"
 
 FROM $BASE_IMAGE
 ARG TARGETARCH

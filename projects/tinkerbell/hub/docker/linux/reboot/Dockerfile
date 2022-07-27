@@ -4,9 +4,8 @@ ARG BUILDER_IMAGE
 FROM $BUILDER_IMAGE as touch-builder
 
 RUN set -x && \
-    yumdownloader --destdir=/tmp/downloads coreutils && \
-    cd /newroot && \
-    rpm2cpio /tmp/downloads/coreutils*.rpm | cpio -idv ./usr/bin/touch
+    install_binary /usr/bin/touch && \
+    cleanup "touch"    
 
 FROM $BASE_IMAGE
 

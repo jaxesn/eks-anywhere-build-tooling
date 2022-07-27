@@ -11,15 +11,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+ARG BASE_IMAGE # https://gallery.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nginx
+ARG BUILDER_IMAGE
+FROM $BUILDER_IMAGE as nginx-builder
+ARG IMAGE_TAG=not-set
+
+RUN set -x && \
+    install_rpm bash && \
+    install_binary /usr/bin/echo \
+        /usr/bin/mkdir \
+        /usr/bin/tee \
+        /usr/bin/cat \
+        /usr/bin/envsubst \
+        /usr/bin/ln \
+        /usr/bin/tr && \
+    cleanup "nginx"
+
+RUN set -x && \
+    echo $IMAGE_TAG > $NEWROOT/IMAGE_TAG && \
+    # chmod 755 $NEWROOT/var/log/nginx && \
+    ln -sf /dev/stdout $NEWROOT/var/log/nginx/access.log && \
+    ln -sf /dev/stderr $NEWROOT/var/log/nginx/error.log && \
+    chmod -R 777 $NEWROOT/usr/share/nginx
 
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
-ARG IMAGE_TAG=not-set
 
-ADD conf/index.template /usr/share/nginx/index.template
-ADD conf/default.conf /etc/nginx/conf.d/
-ADD conf/hello.sh /hello.sh
-RUN echo $IMAGE_TAG >/IMAGE_TAG
+COPY --from=nginx-builder /newroot /
+
+ADD --chown=nginx:nginx conf/index.template /usr/share/nginx/
+ADD --chown=nginx:nginx conf/default.conf /etc/nginx/conf.d/
+ADD --chown=nginx:nginx conf/hello.sh /hello.sh
+
+VOLUME /var/log/nginx /run /usr/share/nginx
 
 STOPSIGNAL SIGQUIT
 ENTRYPOINT ["/hello.sh"]

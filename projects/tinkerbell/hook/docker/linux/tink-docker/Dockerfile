@@ -7,12 +7,17 @@ ARG TARGETARCH
 WORKDIR /newroot
 
 RUN set -x && \
-    amazon-linux-extras enable docker && \
-    cp /etc/yum.repos.d/amzn2-extras.repo /newroot/etc/yum.repos.d/amzn2-extras.repo && \
-    clean_install "systemd" true true && \
-    clean_install "docker procps e2fsprogs" && \
-    remove_package "bash coreutils gawk info sed shadow-utils grep" && \
-    remove_package "systemd" true && \
+    enable_docker_install && \
+    install_binary /usr/bin/docker-init \
+        /usr/bin/dockerd \
+        /usr/sbin/runc \
+        /usr/sbin/reboot && \
+    install_rpm containerd \
+        e2fsprogs \
+        procps \
+        # Docker will use pigz (parallel gz) to extract layers if its available
+        pigz \
+        xfsprogs && \    
     cleanup "tink-docker" && \
     if [ $TARGETARCH = "amd64" ]; then BUSYBOX_ARCH="x86_64"; else BUSYBOX_ARCH="armv81"; fi && \
     curl https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-$BUSYBOX_ARCH -o /newroot/usr/bin/busybox && \

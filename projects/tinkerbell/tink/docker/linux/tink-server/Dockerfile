@@ -1,4 +1,4 @@
-ARG BASE_IMAGE # https://gallery.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base
+ARG BASE_IMAGE # https://gallery.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-glibc
 ARG BUILDER_IMAGE
 
 FROM $BUILDER_IMAGE as wget-builder
@@ -6,8 +6,7 @@ FROM $BUILDER_IMAGE as wget-builder
 WORKDIR /newroot
 
 RUN set -x && \
-    clean_install "wget" && \
-    remove_package "bash coreutils gawk info sed grep" && \
+    install_binary /usr/bin/wget && \
     cleanup "wget"
 
 FROM $BASE_IMAGE

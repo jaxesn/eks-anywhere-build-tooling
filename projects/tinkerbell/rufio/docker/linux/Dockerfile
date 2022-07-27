@@ -5,12 +5,11 @@ FROM $BUILDER_IMAGE as ipmitool-builder
 
 WORKDIR /newroot
 
+ENV OPENIPMI_MODALIAS_IGNORE_SCRIPTLET_ERRORS="true"
+
 RUN set -x && \
-    clean_install "systemd" true true && \
-    clean_install "ipmitool openssl-libs ncurses-libs readline" && \
-    remove_package "bash coreutils gawk info grep sed shadow-utils systemd-sysv" && \
-    remove_package "systemd" true && \
-    cleanup "glibc"
+    install_rpm ipmitool && \
+    cleanup "ipmitool"
 
 FROM $BASE_IMAGE
 

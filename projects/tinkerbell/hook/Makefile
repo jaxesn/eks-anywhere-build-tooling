@@ -41,7 +41,7 @@ $(GATHER_LICENSES_TARGETS): | $(FIX_LICENSES_BOOTKIT_TARGET) $(FIX_LICENSES_TINK
 
 # tink-docker image required docker runtime.
 # We are using eks-distro-minimal-base-glibc as the base and builder to install docker.
-tink-docker/images/%: BASE_IMAGE_NAME=eks-distro-minimal-base-glibc
+tink-docker/images/%: BASE_IMAGE_NAME=eks-distro-minimal-base-iptables
 
 # Currently the kernel image is being built off upstream.
 # TODO: Setup a build environment to build the linux kernel.
