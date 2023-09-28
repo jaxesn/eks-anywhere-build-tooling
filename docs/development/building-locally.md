@@ -1,22 +1,40 @@
 # Building locally
 
 All projects in this repo follow a common building (and updating) process.  Make targets are standardized across the repo.
-Projects can be built on a Mac or Linux host, as well as using the builder-base docker image used in prow for building.
+Projects can be built on a Mac or Linux host. By default when running `go build`, and some of the other key targerts
+such as `gather_licenses` and `attribution`, the builder-base docker image used in prow will be used.
+This is to ensure checksums and attributions match what is generated in our CI and release systems.
+To force running targets on the host: `export FORCE_GO_BUILD_ON_HOST=true`.
 
-## Pre-requisites for building on host
 
-* Multiple versions of golang are required to build the various projects.  There is a helper 
-[script](../../build/lib/install_go_versions.sh) modeled from the builder-base to install all golang versions locally.  
-* If intending on generating checksums or attribution files, patch versions of golang must match. Validate versions in above script match those in [builder-base](https://github.com/aws/eks-distro-build-tooling/blob/main/builder-base/install.sh#L172). If not,
-please send a PR updating script in this repo.
-* Gathering licenses and generating attribution files requires additional setup outlined [here](attribution-files.md).
-* For building container images, buildctl is used instead of docker to match our prow builds.  Running `local-images` targets 
-will export images to a tar, but if running `images` targets which push images, a registry is required.  By default,
-an ECR repo in the currently logged in AWS account will be used.  A common alternative is to run docker registry locally and override
-this default behavior. This can be done with `IMAGE_REPO=localhost:5000 make images`. To run buildkit and the docker registry run from the repo root:
-	* `make run-buildkit-and-registry`
-	* `export BUILDKIT_HOST=docker-container://buildkitd`
-	* `make stop-buildkit-and-registry` to cleanup
+## Pre-requisites for building on MacOS host
+* Docker Desktop - https://docs.docker.com/desktop/install/mac-install/
+* Common utils required - `brew install jq yq`
+* Bash 5.2+ is required - `breq install bash`
+* A number of targets which run on the host require the gnu variants of common tools
+	such as `date` `find` `sed` `stat` `tar` - `brew install coreutils findutils gnu-sed gnu-tar`
+* Building container images requires `buildctl` - `brew buildkit`
+* Building helm charts requires `helm` and `skopeo`
+	* https://helm.sh/docs/intro/install/ - `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash`
+	* https://github.com/containers/skopeo - `brew install skopeo`
+* To make pushing to ECR easier: `brew install docker-credential-helper-ecr`
+
+## Pre-requisites for building on Linux (AL2) host
+* Docker
+	* `sudo yum install -y docker && sudo usermod -a -G docker ec2-user && id ec2-user && newgrp docker`
+	* `sudo systemctl enable docker.service && sudo systemctl start docker.service`
+* Common utils required - `sudo yum -y install jq git-core`
+* Building container images requires `buildctl`
+	* `curl -L https://github.com/moby/buildkit/releases/download/v0.12.2/buildkit-v0.12.2.linux-$([ "x86_64" = "$(uname -m)" ] && echo amd64 || echo arm64).tar.gz -o /tmp/buildkit.tgz && sudo tar -xf /tmp/buildkit.tgz -C /usr/local bin/buildctl`
+* `yq` is required by a number of targets
+	* `sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$([ "x86_64" = "$(uname -m)" ] && echo amd64 || echo arm64) && sudo chmod +x /usr/local/bin/yq`
+* Building helm charts requires `helm` and `skopeo`
+	* https://helm.sh/docs/intro/install/ - `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash`
+	* https://github.com/containers/skopeo - There is no binary release of skopeo for linux see [installing](https://github.com/containers/skopeo/blob/main/install.md) or
+		copy from builder-base image to host: `CONTAINER_ID=$(docker run -d -i public.ecr.aws/eks-distro-build-tooling/builder-base:latest bash) && sudo docker cp $CONTAINER_ID:/usr/bin/skopeo /usr/local/bin && docker rm -vf $CONTAINER_ID`
+* Building container images for different architectures will require `qemu` - `sudo yum install -y qemu-user-static`
+* To ensure string sorting matches our build pipelines - `export LANG=C.UTF-8`
+* To make pushing to ECR easier: `sudo yum install amazon-ecr-credential-helper -y`
 
 ## Typical build targets
 
@@ -37,24 +55,39 @@ Each project folder contains a Makefile with the following build targets.
 * `release` - run via prow postsubmit, same as `build` except runs `images` to push to a remote registry and to push tars/binaries
 	to s3.
 
-## Running in builder-base
 
-It may be easier to ensure building matches that in prow to use the builder-base locally.  There are make target helpers in the root Makefile for this workflow.
+## Pre-requisites for building container images
 
-* To run a target within a specific project:
-	* `make run-target-in-docker MAKE_TARGET=<target> PROJECT=<project>`
-	* any of the above targets can be used for `<target>`
-	* `<project>` will be in the format `org/repo`, ex: `coredns/coredns`
-	* A container is launched using the `builder-base:latest` image and the current source tree is copied into it.
-	  If also building locally, you may want to run `make clean` to avoid copying unnecessary files into the container.
-	* The container will be named `eks-a-builder` and can be accessed to manually run targets or cleanup:
-		* `docker exec -it eks-a-builder bash`
-	* Subsequent calls to `make run-target-in-docker` will use the same running container.  To stop the container:
-		* `make stop-docker-builder`
-* Attribution and Checksum generation may be easier to run in docker to avoid needing specific golang versions locally.  A specific make target exists for these:
-	* `make -C projects/<project> run-attribution-checksums-in-docker`
-	* This will build, generate attribution and checksums and then copy the resulting files out of the container to host project location.
+* For building container images, buildctl is used instead of docker to match our prow builds.  Running `local-images` targets 
+will export images to a tar, but if running `images` targets which push images, a registry is required.  By default,
+an ECR repo in the currently logged in AWS account will be used.  A common alternative is to run docker registry locally and override
+this default behavior. This can be done with `IMAGE_REPO=localhost:5000 make images`. To run buildkit and the docker registry run from the repo root (or a specific project folder):
+	* `make run-buildkit-and-registry`
+	* `export BUILDKIT_HOST=docker-container://buildkitd`
+	* `make stop-buildkit-and-registry` to cleanup
+* See [docker-auth.md](./docker-auth.md) for helpful tips for configuring, securing, and using your AWS credentials with the targets in this project.
+* By default, `IMAGE_REPO` will be set to your AWS account's private ECR registry based on your AWS_REGION. If you want to create the neccessary registeries
+for the current project:
+	* `make create-ecr-repos`
+	* If you would like to create these repos in your ECR public registry - `IMAGE_REPO=public.ecr.aws/<id> create-ecr-repos`
+* Some projects download built artifacts from our dev pipelines. To pull these from the EKS-Anywere dev bucket
+	* `export ARTIFACTS_BUCKET=s3://projectbuildpipeline-857-pipelineoutputartifactsb-10ajmk30khe3f`
 
-## Docker and AWS credentials
+## (Not recommended) Running go builds on the host
 
-See [docker-auth.md](./docker-auth.md) for helpful tips for configuring, securing, and using your AWS credentials with the targets in this project.
+* Multiple versions of golang are required to build the various projects.  There is a helper 
+[script](../../build/lib/install_go_versions.sh) modeled from the builder-base to install all golang versions locally.  
+**Note** Our build and release pipelines use [EKS Go](https://github.com/aws/eks-distro-build-tooling/blob/main/projects/golang/go/README.md) which
+the helper script does not install from. If building on the host, checksums will almost certainly mismatch with what is checked into this repo.
+* If testing gathering licenses and generating attribution files on the host, please follow these [instructions](attribution-files.md) to setup.
+
+
+## Create a long running in builder-base container
+
+By default targets are run in a short-lived container using the builder-base image. If you would like to create a long lived container for testing:
+
+* `make start-docker-builder`
+* The container will be named `eks-a-builder` and can be accessed to manually run targets or cleanup:
+	* `docker exec -it eks-a-builder bash`
+* To stop the container:
+	* `make stop-docker-builder`

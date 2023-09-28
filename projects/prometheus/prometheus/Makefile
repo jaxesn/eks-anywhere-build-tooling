@@ -54,7 +54,8 @@ $(FIX_LICENSES_CRONEXPR_TARGET): | $(GO_MOD_DOWNLOAD_TARGETS)
 # the standard license file name it is not found by go-licenses
 	cp $(@D)/APLv2 $@
 
-$(WEB_UI_TARGETS):
+$(WEB_UI_TARGETS): SHOULD_RUN_IN_DOCKER:=$(shell command -v npm &> /dev/null || echo "true")
+$(WEB_UI_TARGETS): | $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 	@echo '>> npm install and npm build'
 	cd prometheus/web/ui && npm install && CI="" npm run build
 	@echo ">> bundling npm licenses"

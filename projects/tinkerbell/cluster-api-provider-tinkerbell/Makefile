@@ -18,7 +18,7 @@ include $(BASE_DIRECTORY)/Common.mk
 s3-artifacts: create-manifests
 
 .PHONY: create-manifests
-create-manifests: tarballs
+create-manifests: tarballs | ensure-yq $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 	build/create_manifests.sh $(REPO) $(OUTPUT_DIR) $(ARTIFACTS_PATH) $(GIT_TAG) $(IMAGE_REPO) $(IMAGE_TAG)
 
 

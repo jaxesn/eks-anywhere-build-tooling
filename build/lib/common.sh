@@ -261,7 +261,11 @@ function build::common::get_go_path() {
 }
 
 function build::common::use_go_version() {
-  local -r version=$1
+  local -r version=${1:-}
+
+  if [ -z "$version" ]; then
+    return
+  fi
 
   if (( "${version#*.}" < 16 )); then
     echo "Building with GO version $version is no longer supported!  Please update the build to use a newer version."
@@ -273,6 +277,7 @@ function build::common::use_go_version() {
   # Adding to the beginning of PATH to allow for builds on specific version if it exists
   export PATH=${gobinarypath}:$PATH
   export GOCACHE=$(go env GOCACHE)/$version
+  echo "$(go version)"
 }
 
 # Use a seperate build cache for each project/version to ensure there are no

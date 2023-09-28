@@ -24,8 +24,9 @@ RELEASE_BRANCH="${4:-}"
 ARTIFACTS_BUCKET="${5:-$ARTIFACTS_BUCKET}"
 BASE_DIRECTORY="${6:-}"
 GO_MOD_CACHE="${7:-}"
-REMOVE="${8:-false}"
-PLATFORM="${9:-}"
+BUILDER_PLATFORM_ARCH="${8:-amd64}"
+REMOVE="${9:-false}"
+PLATFORM="${10:-}"
 
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
@@ -40,18 +41,12 @@ MAKE_VARS="IMAGE_REPO=$IMAGE_REPO ARTIFACTS_BUCKET=$ARTIFACTS_BUCKET"
 
 function remove_container()
 {
-	docker rm -vf $CONTAINER_ID
+	docker rm -vf $CONTAINER_ID > /dev/null 2>&1
 }
 
 SKIP_RUN="false"
 NAME=""
 if [[ "$REMOVE" == "false" ]]; then
-	echo "****************************************************************"
-	echo "A docker container with the name eks-a-builder will be launched."
-	echo "It will be left running to support running consecutive runs."
-	echo "Run 'make stop-docker-builder' when you are done to stop it."
-	echo "****************************************************************"
-
 	NAME="--name eks-a-builder"
 
 	if docker ps -f name=eks-a-builder | grep -w eks-a-builder; then
@@ -63,13 +58,15 @@ else
 fi
 
 IMAGE="public.ecr.aws/eks-distro-build-tooling/builder-base:latest"
-PLATFORM_ARG=""
+# since if building cgo we will specifically set the arch to something other than the host
+# ensure we always explictly ask for the host platform, unless override for cgo
+PLATFORM_ARG="--platform linux/$BUILDER_PLATFORM_ARCH"
 
 if [[ -n "$PLATFORM" ]]; then
 	DIGEST=$(docker buildx imagetools inspect --raw public.ecr.aws/eks-distro-build-tooling/builder-base:latest | jq -r ".manifests[] | select(.platform.architecture == \"${PLATFORM#linux/}\") | .digest")
 	IMAGE="public.ecr.aws/eks-distro-build-tooling/builder-base@$DIGEST"
 	PLATFORM_ARG="--platform $PLATFORM"
-	MAKE_VARS=" BINARY_PLATFORMS=$PLATFORM"
+	MAKE_VARS+=" BINARY_PLATFORMS=$PLATFORM"
 fi
 
 DOCKER_USER_FLAG=""
@@ -85,7 +82,10 @@ fi
 
 
 if [[ "$SKIP_RUN" == "false" ]]; then
-	build::docker::retry_pull $IMAGE
+	if ! build::docker::retry_pull $IMAGE > /dev/null 2>&1; then
+		# try one more time to show the error to the user
+		docker pull $IMAGE
+	fi
 
 	NETRC=""
 	if [ -f $HOME/.netrc ]; then
@@ -101,18 +101,22 @@ if [[ "$SKIP_RUN" == "false" ]]; then
 		--mount type=bind,source=$DOCKER_RUN_GO_MOD_CACHE,target=/mod-cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-e GOPROXY=${GOPROXY:-} -e GOMODCACHE=/mod-cache -e DOCKER_RUN_BASE_DIRECTORY=$DOCKER_RUN_BASE_DIRECTORY -e DOCKER_RUN_GO_MOD_CACHE=$DOCKER_RUN_GO_MOD_CACHE -e DOCKER_RUN_NETRC=$DOCKER_RUN_NETRC \
-		--entrypoint sleep $IMAGE infinity)
+		--init --entrypoint sleep $IMAGE infinity)
 
 	if [ -n "$DOCKER_USER_FLAG" ]; then
-		docker exec -it $CONTAINER_ID groupadd -g 100 users
-		docker exec -it $CONTAINER_ID groupadd --gid "$USER_GROUP_ID" matchinguser
-		docker exec -it $CONTAINER_ID useradd  --no-create-home --uid "$USER_ID" --gid "$USER_GROUP_ID" matchinguser
-		docker exec -it $CONTAINER_ID mkdir -p /home/matchinguser
-		docker exec -it $CONTAINER_ID chown -R matchinguser:matchinguser /home/matchinguser
+		docker exec -it $CONTAINER_ID /eks-anywhere-build-tooling/build/lib/prepare_build_container_user.sh "$USER_GROUP_ID" "$USER_GROUP_ID"
+	fi
+
+	if [[ "$REMOVE" == "false" ]]; then
+		echo "****************************************************************"
+		echo "A docker container with the name eks-a-builder will be launched."
+		echo "It will be left running to support running consecutive runs."
+		echo "Run 'make stop-docker-builder' when you are done to stop it."
+		echo "****************************************************************"
 	fi
 fi
 
 
 build::common::echo_and_run docker exec -e RELEASE_BRANCH=$RELEASE_BRANCH $DOCKER_USER_FLAG \
 	-it $CONTAINER_ID \
-	make $TARGET -C /eks-anywhere-build-tooling/projects/$PROJECT $MAKE_VARS
+	make --no-print-directory $TARGET -C /eks-anywhere-build-tooling/projects/$PROJECT $MAKE_VARS

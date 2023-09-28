@@ -34,7 +34,7 @@ include $(BASE_DIRECTORY)/Common.mk
 tarballs: gather-non-golang-licenses $(OUTPUT_DIR)/ATTRIBUTION.txt
 
 $(BINARY_TARGETS): MAKEFLAGS=
-$(BINARY_TARGETS): $(GIT_CHECKOUT_TARGET)	
+$(BINARY_TARGETS): $(GIT_CHECKOUT_TARGET) | $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 	mkdir -p $(MAKE_ROOT)/$(@D)
 	$(MAKE) -C $(REPO)/tools/bootconfig OUTPUT=$(MAKE_ROOT)/$(@D)/
 

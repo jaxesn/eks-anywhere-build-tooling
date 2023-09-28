@@ -48,7 +48,7 @@ kernel/images/%: BASE_IMAGE=quay.io/tinkerbell/hook-kernel:$(LINUX_KERNEL_VERSIO
 
 s3-artifacts: $(CREATE_HOOK_FILES)
 
-$(CREATE_HOOK_FILES): tarballs
+$(CREATE_HOOK_FILES): tarballs | $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 # Modify the linuxkit config file hook/hook.yaml to point to IMAGE_REPO.
 # Upstream make target `dist` is triggered to perform linuxkit build and generate OSIE files ().
 	source $(BUILD_LIB)/common.sh && build::common::use_go_version "1.19" && make dist IMAGE_REPO=$(IMAGE_REPO) LATEST_TAG=$(LATEST_TAG) -C $(REPO)

@@ -1,3 +1,7 @@
+MAKEFLAGS+=--no-builtin-rules --warn-undefined-variables
+SHELL=bash
+.SHELLFLAGS:=-eu -o pipefail -c
+
 BASE_DIRECTORY:=$(shell git rev-parse --show-toplevel)
 BUILD_LIB=${BASE_DIRECTORY}/build/lib
 AWS_ACCOUNT_ID?=$(shell aws sts get-caller-identity --query Account --output text)
@@ -13,6 +17,7 @@ ALL_PROJECTS=$(shell $(BUILD_LIB)/all_projects.sh $(BASE_DIRECTORY))
 # $1 - project name using _ as separator, ex: rancher_local-path-provisoner
 PROJECT_PATH_MAP=projects/$(patsubst $(firstword $(subst _, ,$(1)))_%,$(firstword $(subst _, ,$(1)))/%,$(1))
 
+BUILDER_PLATFORM_ARCH:=$(if $(filter x86_64,$(shell uname -m)),amd64,arm64)
 # Locale settings impact file ordering in ls or shell file expansion. The file order is used to
 # generate files that are subsequently validated by the CI. If local environments use different 
 # locales to the CI we get unexpected failures that are tricky to debug without knowledge of 
@@ -21,6 +26,11 @@ PROJECT_PATH_MAP=projects/$(patsubst $(firstword $(subst _, ,$(1)))_%,$(firstwor
 # In a AL2 (or other distro) full instance the LANG will be en-us.UTF-8 which produces different sorts
 # On Mac, LANG will be en-us.UTF-8 but has a fix applied to sort to avoid the difference
 ifeq ($(shell uname -s),Linux)
+  TO_LOWER = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst \
+	F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst \
+	M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst \
+	T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$(subst _,-,$(1))))))))))))))))))))))))))))
+	
   LOCALE:=$(call TO_LOWER,$(shell locale | grep LANG | cut -d= -f2 | tr -d '"'))
   LOCALE:=$(if $(LOCALE),$(LOCALE),posix)
   ifeq ($(filter c.utf-8 posix,$(LOCALE)),)
@@ -38,6 +48,55 @@ clean-project-%:
 .PHONY: clean
 clean: $(addprefix clean-project-, $(ALL_PROJECTS))
 	rm -rf _output
+
+.PHONY: build-all
+build-all: build-all-warning $(foreach project,$(ALL_PROJECTS),$(call PROJECT_PATH_MAP,$(project))/eks-anywhere-full-buld-complete)
+
+%/eks-anywhere-full-buld-complete: export RELEASE_BRANCH=1-27
+%/eks-anywhere-full-buld-complete:
+	@if [[ "$(@D)" == *"aws/cluster-api-provider-aws-snow"* ]]; then \
+		echo "Skipping aws/cluster-api-provider-aws-snow: container images are pulled cross account"; \
+		exit; \
+	elif [[ "$(@D)" == *"prometheus/prometheus"* ]]; then \
+		echo "Running make create-ecr-repos images for prometheus/node_exporter "; \
+		make -C projects/prometheus/node_exporter create-ecr-repos images IMAGE_PLATFORMS=linux/$(BUILDER_PLATFORM_ARCH); \
+	elif [[ "$(@D)" == *"cilium/cilium"* ]]; then \
+		echo "Skipping cilium/cilium: due to odd helm pull"; \
+		exit; \
+	elif [[ "$(@D)" == *"kubernetes-sigs/image-builder"* ]]; then \
+		export SKIP_METAL_INSTANCE_TEST=true; \
+	elif [[ "$(@D)" == *"goharbor/harbor"* ]]; then \
+		echo "skipping goharbor/harbor: unknown"; \
+		exit; \
+	elif [[ "$(@D)" == *"containerd/containerd"* ]]; then \
+		echo "skipping containerd/containerd: unknown"; \
+		exit; \
+	elif [[ "$(@D)" == *"opencontainers/runc"* ]]; then \
+		echo "skipping opencontainers/runc: unknown"; \
+		exit; \
+	elif [[ "$(@D)" == *"tinkerbell/hook"* ]]; then \
+		echo "skipping tinkerbell/hook: unknown"; \
+		exit; \
+	elif [[ "$(@D)" == *"tinkerbell/hub"* ]]; then \
+		echo "skipping tinkerbell/hub: unknown"; \
+		exit; \
+	elif [[ "$(@D)" == *"tinkerbell/tinkerbell-chart"* ]]; then \
+		echo "skipping tinkerbell/tinkerbell-chart: unknown"; \
+		exit; \
+	fi; \
+	if [ "$$($(MAKE) --no-print-directory -C $(@D) var-value-HAS_HELM_CHART)" = "true" ] && [ "$$($(MAKE) --no-print-directory -C $(@D) var-value-IMAGE_NAMES)" = "true" ]; then \
+		echo "Running make create-ecr-repos images for $(@D) "; \
+		make -C $(@D) create-ecr-repos; \
+		make -C $(@D) images IMAGE_PLATFORMS=linux/$(BUILDER_PLATFORM_ARCH); \
+	fi; \
+	echo "Running make build for $(@D) "; \
+	make --no-print-directory -C $(@D) build; \
+	touch $@
+
+.PHONY: build-all-warning
+build-all-warning:
+	@echo "*** Warning: this target is not meant to used except for specific testing situations ***"
+	@echo "*** this will likely fail and either way run for a really long time ***"
 
 .PHONY: add-generated-help-block-project-%
 add-generated-help-block-project-%:

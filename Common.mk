@@ -14,10 +14,10 @@ MAKE_ROOT=$(BASE_DIRECTORY)/projects/$(COMPONENT)
 PROJECT_PATH?=$(subst $(BASE_DIRECTORY)/,,$(MAKE_ROOT))
 BUILD_LIB=${BASE_DIRECTORY}/build/lib
 OUTPUT_BIN_DIR?=$(OUTPUT_DIR)/bin/$(REPO)
-
 #################### AWS ###########################
 AWS_REGION?=us-west-2
-AWS_ACCOUNT_ID?=$(shell aws sts get-caller-identity --query Account --output text)
+AWS_STS_ACCOUNT_ID?=$(shell aws sts get-caller-identity --query Account --output text)
+AWS_ACCOUNT_ID?=$(call CACHE_RESULT,AWS_STS_ACCOUNT_ID)
 ARTIFACTS_BUCKET?=s3://my-s3-bucket
 IMAGE_REPO?=$(if $(AWS_ACCOUNT_ID),$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com,localhost:5000)
 ####################################################
@@ -95,9 +95,9 @@ SKIPPED_K8S_VERSIONS?=
 BINARIES_ARE_RELEASE_BRANCHED?=true
 IS_RELEASE_BRANCH_BUILD=$(filter true,$(HAS_RELEASE_BRANCHES))
 UNRELEASE_BRANCH_BINARY_TARGETS=binaries attribution checksums
-IS_UNRELEASE_BRANCH_TARGET=$(and $(filter false,$(BINARIES_ARE_RELEASE_BRANCHED)),$(filter $(UNRELEASE_BRANCH_BINARY_TARGETS) $(foreach target,$(UNRELEASE_BRANCH_BINARY_TARGETS),run-$(target)-in-docker),$(MAKECMDGOALS)))
+IS_UNRELEASE_BRANCH_TARGET=$(and $(filter false,$(BINARIES_ARE_RELEASE_BRANCHED)),$(filter $(UNRELEASE_BRANCH_BINARY_TARGETS) $(foreach target,$(UNRELEASE_BRANCH_BINARY_TARGETS),run-$(target)-in-docker run-in-docker/$(target)),$(MAKECMDGOALS)))
 TARGETS_ALLOWED_WITH_NO_RELEASE_BRANCH?=
-TARGETS_ALLOWED_WITH_NO_RELEASE_BRANCH+=build release clean clean-extra clean-go-cache help stop-docker-builder create-ecr-repos all-attributions all-checksums all-attributions-checksums update-patch-numbers check-for-release-branch-skip
+TARGETS_ALLOWED_WITH_NO_RELEASE_BRANCH+=build release clean clean-extra clean-go-cache help start-docker-builder stop-docker-builder create-ecr-repos all-attributions all-checksums all-attributions-checksums update-patch-numbers check-for-release-branch-skip run-buildkit-and-registry
 MAKECMDGOALS_WITHOUT_VAR_VALUE=$(foreach t,$(MAKECMDGOALS),$(if $(findstring var-value-,$(t)),,$(t)))
 ifneq ($(and $(IS_RELEASE_BRANCH_BUILD),$(or $(RELEASE_BRANCH),$(IS_UNRELEASE_BRANCH_TARGET))),)
 	RELEASE_BRANCH_SUFFIX=$(if $(filter true,$(BINARIES_ARE_RELEASE_BRANCHED)),/$(RELEASE_BRANCH),)
@@ -172,9 +172,11 @@ IMAGE_IMPORT_CACHE?=type=registry,ref=$(LATEST_IMAGE) type=registry,ref=$(subst 
 
 BUILD_OCI_TARS?=false
 
-LOCAL_IMAGE_TARGETS=$(foreach image,$(IMAGE_NAMES),$(image)/images/amd64)
+LOCAL_IMAGE_TARGETS=$(foreach image,$(IMAGE_NAMES),$(image)/images/$(BUILDER_PLATFORM_ARCH))
 IMAGE_TARGETS=$(foreach image,$(IMAGE_NAMES),$(if $(filter true,$(BUILD_OCI_TARS)),$(call IMAGE_TARGETS_FOR_NAME,$(image)),$(image)/images/push))
 
+# intentionally not setting a default verison, we do not want projects depending on a default
+GOLANG_VERSION?=
 # If running in the builder base on prow or codebuild, grab the current tag to be used when building with cgo
 CURRENT_BUILDER_BASE_TAG=$(or $(and $(wildcard /config/BUILDER_BASE_TAG_FILE),$(shell cat /config/BUILDER_BASE_TAG_FILE)),latest)
 CURRENT_BUILDER_BASE_IMAGE=$(if $(CODEBUILD_BUILD_IMAGE),$(CODEBUILD_BUILD_IMAGE),$(BASE_IMAGE_REPO)/builder-base:$(CURRENT_BUILDER_BASE_TAG))
@@ -189,12 +191,14 @@ HELM_SOURCE_IMAGE_REPO?=$(IMAGE_REPO)
 HELM_GIT_TAG?=$(GIT_TAG)
 HELM_TAG?=$(GIT_TAG)-$(GIT_HASH)
 HELM_USE_UPSTREAM_IMAGE?=false
+HELM_CHART_NAME?=$(IMAGE_COMPONENT)
 # HELM_DIRECTORY must be a relative path from project root to the directory that contains a chart
 HELM_DIRECTORY?=.
-HELM_DESTINATION_REPOSITORY?=$(IMAGE_COMPONENT)
+HELM_DESTINATION_REPOSITORY?=$(HELM_CHART_NAME)
 HELM_IMAGE_LIST?=
 HELM_GIT_CHECKOUT_TARGET?=$(HELM_SOURCE_REPOSITORY)/eks-anywhere-checkout-$(HELM_GIT_TAG)
 HELM_GIT_PATCH_TARGET?=$(HELM_SOURCE_REPOSITORY)/eks-anywhere-helm-patched
+PACKAGE_DEPENDENCIES?=
 ####################################################
 
 #### HELPERS ########
@@ -228,6 +232,9 @@ TO_LOWER = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst \
 	M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst \
 	T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$(subst _,-,$(1))))))))))))))))))))))))))))
 
+# $1 - variable name to resolve and cache
+CACHE_RESULT = $(if $(filter undefined,$(origin _cached-$1)),$(eval _cached-$1 := 1)$(eval _cache-$1 := $($1)),)$(_cache-$1)
+
 # $1 - potential override variable name
 # $2 - value if variable not set
 # returns value of override var if one is set, otherwise returns $(2)
@@ -239,16 +246,6 @@ IMAGE_TARGETS_FOR_NAME=$(addsuffix /images/push, $(1)) $(addsuffix /images/amd64
 
 # $1 - binary file name
 FULL_FETCH_BINARIES_TARGETS=$(foreach platform,$(BINARY_PLATFORMS),$(addprefix $(BINARY_DEPS_DIR)/$(subst /,-,$(platform))/, $(1)))
-
-# Based on PROJECT_DEPENDENCIES, generate fetch binaries targets, only projects with s3 artifacts will be fetched
-PROJECT_DEPENDENCIES_TARGETS=$(foreach dep,$(PROJECT_DEPENDENCIES), \
-	$(eval project_path_parts:=$(subst /, ,$(dep))) \
-	$(eval project_path:=$(BASE_DIRECTORY)/projects/$(word 2,$(project_path_parts))/$(word 3,$(project_path_parts))) \
-	$(if $(or $(findstring eksd,$(dep)), \
-		$(and \
-			$(if $(wildcard $(project_path)),true,$(error Non-existent dependency: $(dep))), \
-			$(filter true,$(shell $(MAKE) -C $(project_path) var-value-HAS_S3_ARTIFACTS)) \
-		)),$(call FULL_FETCH_BINARIES_TARGETS,$(dep)),))
 
 # $1 - targets
 # $2 - platforms
@@ -357,12 +354,14 @@ GO_MOD_DOWNLOAD_TARGETS?=$(foreach path, $(UNIQ_GO_MOD_PATHS), $(call GO_MOD_DOW
 VENDOR_UPDATE_SCRIPT?=
 #### CGO ############
 CGO_CREATE_BINARIES?=false
-IS_ON_BUILDER_BASE?=$(shell if [ -f /buildkit.sh ]; then echo true; fi;)
-BUILDER_PLATFORM?=$(shell echo $$(go env GOHOSTOS)/$$(go env GOHOSTARCH))
-needs-cgo-builder=$(and $(if $(filter true,$(CGO_CREATE_BINARIES)),true,),$(if $(filter-out $(1),$(BUILDER_PLATFORM)),true,))
+IS_ON_BUILDER_BASE:=$(shell if [ -f /buildkit.sh ]; then echo true; fi;)
+BUILDER_PLATFORM_OS:=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+BUILDER_PLATFORM_ARCH:=$(if $(filter x86_64,$(shell uname -m)),amd64,arm64)
+BUILDER_PLATFORM:=$(BUILDER_PLATFORM_OS)/$(BUILDER_PLATFORM_ARCH)
+NEEDS_CGO_BUILDER=$(and $(if $(filter true,$(CGO_CREATE_BINARIES)),true,),$(if $(filter true,$(IS_ON_BUILDER_BASE)),,true))
 USE_DOCKER_FOR_CGO_BUILD?=false
-GO_MOD_CACHE=$(shell source $(BUILD_LIB)/common.sh && build::common::use_go_version $(GOLANG_VERSION) > /dev/null 2>&1 && go env GOMODCACHE)
-GO_BUILD_CACHE=$(shell source $(BUILD_LIB)/common.sh && build::common::use_go_version $(GOLANG_VERSION) > /dev/null 2>&1 && go env GOCACHE)
+GO_MOD_CACHE:=$(shell if source $(BUILD_LIB)/common.sh && build::common::use_go_version $(GOLANG_VERSION) > /dev/null 2>&1 && command -v go &> /dev/null; then go env GOMODCACHE; else echo $${HOME}/.cache/go/pkg/mod; fi)
+GO_BUILD_CACHE:=$(shell if source $(BUILD_LIB)/common.sh && build::common::use_go_version $(GOLANG_VERSION) > /dev/null 2>&1 && command -v go &> /dev/null; then go env GOCACHE; else echo $${HOME}/.cache/go-build; fi)
 CGO_TARGET?=
 GO_MODS_VENDORED?=false
 ######################
@@ -387,6 +386,16 @@ GOBUILD_COMMAND?=build
 BINARY_DEPS_DIR?=$(OUTPUT_DIR)/dependencies
 PROJECT_DEPENDENCIES?=
 HANDLE_DEPENDENCIES_TARGET?=handle-dependencies
+
+# Based on PROJECT_DEPENDENCIES, generate fetch binaries targets, only projects with s3 artifacts will be fetched
+PROJECT_DEPENDENCIES_TARGETS:=$(foreach dep,$(PROJECT_DEPENDENCIES), \
+	$(eval project_path_parts:=$(subst /, ,$(dep))) \
+	$(eval project_path:=$(BASE_DIRECTORY)/projects/$(word 2,$(project_path_parts))/$(word 3,$(project_path_parts))) \
+	$(if $(or $(findstring eksd,$(dep)), \
+		$(and \
+			$(if $(wildcard $(project_path)),true,$(error Non-existent dependency: $(dep))), \
+			$(filter true,$(shell $(MAKE) -C $(project_path) var-value-HAS_S3_ARTIFACTS)) \
+		)),$(call FULL_FETCH_BINARIES_TARGETS,$(dep)),))
 ####################################################
 
 #################### LICENSES ######################
@@ -420,18 +429,47 @@ KUSTOMIZE_TARGET=$(OUTPUT_DIR)/kustomize
 GIT_DEPS_DIR?=$(OUTPUT_DIR)/gitdependencies
 SPECIAL_TARGET_SECONDARY=$(strip $(PROJECT_DEPENDENCIES_TARGETS) $(GO_MOD_DOWNLOAD_TARGETS))
 SKIP_CHECKSUM_VALIDATION?=false
-IN_DOCKER_TARGETS=all-attributions all-attributions-checksums all-checksums attribution attribution-checksums binaries checksums clean clean-go-cache
+IN_DOCKER_TARGETS=all-attributions all-attributions-checksums all-checksums attribution attribution-checksums binaries checksums clean clean-go-cache validate-checksums $(GO_MOD_DOWNLOAD_TARGETS) $(BINARY_TARGETS) $(GATHER_LICENSES_TARGETS)
 PRUNE_BUILDCTL?=false
 GITHUB_TOKEN?=
-
+# if this is set we are running in the context of a run-<>-in-docker target
+DOCKER_RUN_BASE_DIRECTORY?=
 DEPENDENCY_TOOLS=buildctl helm jq skopeo tuftool yq
+
+RUN_ON_HOST?=1
+# set to true if do not care about checksum match, default to false to limit confusion
+# around checksum mismatch
+FORCE_GO_BUILD_ON_HOST?=false
+# always build in docker unless user specifically sets to true
+MISSING_CORRECT_GO_VERSION=$(if $(filter true,$(FORCE_GO_BUILD_ON_HOST)),false,true)
+
+# $1 - target(s)
+MAYBE_RUN_IN_DOCKER?=$(if \
+	$(and \
+		$(if $(IS_ON_BUILDER_BASE),,false), \
+		$(filter true,$(SHOULD_RUN_IN_DOCKER)) \
+	),$(foreach target,$1,run-in-docker/$(target)),)
+
+ENABLE_DOCKER_FOR_TARGET=$(eval $(call _ENABLE_DOCKER_FOR_TARGET,$(1)))$(DOCKER_TARGET)
+# $1 - target name
+# SHELL is overriden to the cli `true` so that when the actual target ends up running on the host it is an noop
+define _ENABLE_DOCKER_FOR_TARGET
+$(eval _TARGET:=$1)
+$(_TARGET): DOCKER_TARGET:=$$(call MAYBE_RUN_IN_DOCKER,$$@)
+$(_TARGET): RUN_ON_HOST=$$(if $$(DOCKER_TARGET),0,1)
+$(_TARGET): SHELL=$$(if $$(DOCKER_TARGET),true,bash)
+$(_TARGET): SILENT_TARGETS+=$(_TARGET)
+endef
+
+SILENT_TARGETS?=
+.SILENT: $(SILENT_TARGETS)
 ####################################################
 
 #################### LOGGING #######################
-DATE_CMD=TZ=utc $(shell if [ "$$(uname -s)" = "Darwin" ] && command -v gdate &> /dev/null; then echo gdate; else echo date; fi)
-DATE_NANO=$(shell if [ "$$(uname -s)" = "Linux" ] || command -v gdate &> /dev/null; then echo %3N; fi)
-TARGET_START_LOG?=$(eval _START_TIME:=$(shell $(DATE_CMD) +%s.$(DATE_NANO)))\\n------------------- $(shell $(DATE_CMD) +"%Y-%m-%dT%H:%M:%S.$(DATE_NANO)%z") Starting target=$@ -------------------
-TARGET_END_LOG?="------------------- `$(DATE_CMD) +'%Y-%m-%dT%H:%M:%S.$(DATE_NANO)%z'` Finished target=$@ duration=`echo $$($(DATE_CMD) +%s.$(DATE_NANO)) - $(_START_TIME) | bc` seconds -------------------\\n"
+DATE_CMD:=TZ=utc $(shell source $(BUILD_LIB)/common.sh && build::find::gnu_variant_on_mac date)
+DATE_NANO:=$(shell if [ "$$(uname -s)" = "Linux" ] || command -v gdate &> /dev/null; then echo %3N; fi)
+TARGET_START_LOG?=$(eval _START_TIME:=$(shell $(DATE_CMD) +%s.$(DATE_NANO)))\\n------------------- $(shell $(DATE_CMD) +"%Y-%m-%dT%H:%M:%S.$(DATE_NANO)%z") $(if $(DOCKER_RUN_BASE_DIRECTORY),\(In Docker\),) Starting target=$(if $(filter undefined,$(origin 1)),$(@),$(1)) -------------------
+TARGET_END_LOG?="------------------- `$(DATE_CMD) +'%Y-%m-%dT%H:%M:%S.$(DATE_NANO)%z'` $(if $(DOCKER_RUN_BASE_DIRECTORY),(In Docker) ,)Finished target=$(if $(filter undefined,$(origin 1)),$(@),$(1)) duration=`echo $$($(DATE_CMD) +%s.$(DATE_NANO)) - $(_START_TIME) | bc` seconds -------------------\\n"
 ####################################################
 
 #################### TARGETS FOR OVERRIDING ########
@@ -477,7 +515,7 @@ endef
 # This will occansionally stall out in codebuild for an unknown reason
 # retry after a configurable timeout
 define CGO_DOCKER
-	$(BUILD_LIB)/run_target_docker.sh $(COMPONENT) $(CGO_TARGET) $(IMAGE_REPO) "$(RELEASE_BRANCH)" "$(ARTIFACTS_BUCKET)" "$(BASE_DIRECTORY)" "$(GO_MOD_CACHE)" true "$(IMAGE_PLATFORMS)"
+	source $(BUILD_LIB)/common.sh && build::common::echo_and_run $(BUILD_LIB)/run_target_docker.sh $(COMPONENT) $(CGO_TARGET) $(IMAGE_REPO) "$(RELEASE_BRANCH)" "$(ARTIFACTS_BUCKET)" "$(BASE_DIRECTORY)" "$(GO_MOD_CACHE)" "$(BUILDER_PLATFORM_ARCH)" true "$(IMAGE_PLATFORMS)"
 endef
 
 define SIMPLE_CREATE_BINARIES_SHELL
@@ -537,7 +575,7 @@ endif
 
 ## GO mod download targets
 $(REPO)/%ks-anywhere-go-mod-download: REPO_SUBPATH=$(if $(filter e,$*),,$(*:%/e=%))
-$(REPO)/%ks-anywhere-go-mod-download: $(if $(PATCHES_DIR),$(GIT_PATCH_TARGET),$(GIT_CHECKOUT_TARGET))
+$(REPO)/%ks-anywhere-go-mod-download: $(if $(PATCHES_DIR),$(GIT_PATCH_TARGET),$(GIT_CHECKOUT_TARGET)) | $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 	@echo -e $(call TARGET_START_LOG)
 	if [[ "$(GO_MODS_VENDORED)" == "false" ]]; then $(BASE_DIRECTORY)/build/lib/go_mod_download.sh $(MAKE_ROOT) $(REPO) $(GIT_TAG) $(GOLANG_VERSION) "$(REPO_SUBPATH)"; fi
 	@touch $@
@@ -576,9 +614,11 @@ $(OUTPUT_BIN_DIR)/%: BINARY_TARGET=$(@F:%.exe=%)
 $(OUTPUT_BIN_DIR)/%: SOURCE_PATTERN=$(if $(filter $(BINARY_TARGET),$(BINARY_TARGET_FILES_BUILD_TOGETHER)),$(SOURCE_PATTERNS_BUILD_TOGETHER),$(word $(call pos,$(BINARY_TARGET),$(BINARY_TARGET_FILES)),$(SOURCE_PATTERNS)))
 $(OUTPUT_BIN_DIR)/%: OUTPUT_PATH=$(if $(and $(if $(filter false,$(call IS_ONE_WORD,$(BINARY_TARGET_FILES_BUILD_TOGETHER))),$(filter $(BINARY_TARGET),$(BINARY_TARGET_FILES_BUILD_TOGETHER)))),$(@D)/,$@)
 $(OUTPUT_BIN_DIR)/%: GO_MOD_PATH=$($(call GO_MOD_TARGET_FOR_BINARY_VAR_NAME,$(BINARY_TARGET)))
-$(OUTPUT_BIN_DIR)/%: $$(call GO_MOD_DOWNLOAD_TARGET_FROM_GO_MOD_PATH,$$(GO_MOD_PATH))
+$(OUTPUT_BIN_DIR)/%: GO_MOD_DOWNLOAD_TARGET=$(call GO_MOD_DOWNLOAD_TARGET_FROM_GO_MOD_PATH,$(GO_MOD_PATH)) 
+$(OUTPUT_BIN_DIR)/%: SHOULD_RUN_IN_DOCKER:=$(if $(NEEDS_CGO_BUILDER),false,true)
+$(OUTPUT_BIN_DIR)/%: $$(GO_MOD_DOWNLOAD_TARGET) | $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 	@echo -e $(call TARGET_START_LOG)
-	$(if $(filter true,$(call needs-cgo-builder,$(PLATFORM))),$(call CGO_CREATE_BINARIES_SHELL,$@,$(*D)),$(call SIMPLE_CREATE_BINARIES_SHELL))
+	$(if $(NEEDS_CGO_BUILDER),$(call CGO_CREATE_BINARIES_SHELL,$@,$(*D)),$(call SIMPLE_CREATE_BINARIES_SHELL))
 	@echo -e $(call TARGET_END_LOG)
 endif
 
@@ -623,7 +663,8 @@ $(OUTPUT_DIR)/%TTRIBUTION.txt:
 $(OUTPUT_DIR)/%ttribution/go-license.csv: BINARY_TARGET=$(if $(filter .,$(*D)),,$(*D))
 $(OUTPUT_DIR)/%ttribution/go-license.csv: GO_MOD_PATH=$(if $(BINARY_TARGET),$(GO_MOD_TARGET_FOR_BINARY_$(call TO_UPPER,$(BINARY_TARGET))),$(word 1,$(UNIQ_GO_MOD_PATHS)))
 $(OUTPUT_DIR)/%ttribution/go-license.csv: LICENSE_PACKAGE_FILTER=$(GO_MOD_$(subst /,_,$(GO_MOD_PATH))_LICENSE_PACKAGE_FILTER)
-$(OUTPUT_DIR)/%ttribution/go-license.csv: ensure-jq $$(call GO_MOD_DOWNLOAD_TARGET_FROM_GO_MOD_PATH,$$(GO_MOD_PATH)) 
+$(OUTPUT_DIR)/%ttribution/go-license.csv: GO_MOD_DOWNLOAD_TARGET=$(call GO_MOD_DOWNLOAD_TARGET_FROM_GO_MOD_PATH,$(GO_MOD_PATH)) 
+$(OUTPUT_DIR)/%ttribution/go-license.csv: $$(GO_MOD_DOWNLOAD_TARGET) | $$(call ENABLE_DOCKER_FOR_TARGET,$$@) ensure-jq
 	@echo -e $(call TARGET_START_LOG)
 	$(BASE_DIRECTORY)/build/lib/gather_licenses.sh $(REPO) $(MAKE_ROOT)/$(OUTPUT_DIR)/$(BINARY_TARGET) "$(LICENSE_PACKAGE_FILTER)" $(GO_MOD_PATH) $(GOLANG_VERSION) $(LICENSE_THRESHOLD)
 	@echo -e $(call TARGET_END_LOG)
@@ -635,7 +676,9 @@ gather-licenses: $(GATHER_LICENSES_TARGETS)
 # if there is only one go mod path so only one attribution is created, the file will be named ATTRIBUTION.txt and licenses will be stored in _output, `%` will equal `A`
 # if multiple attributions are being generated, the file will be <binary>_ATTRIBUTION.txt and licenses will be stored in _output/<binary>, `%` will equal `<BINARY>_A`
 %TTRIBUTION.txt: LICENSE_OUTPUT_PATH=$(OUTPUT_DIR)$(if $(filter A,$(*F)),,/$(call TO_LOWER,$(*F:%_A=%)))
-%TTRIBUTION.txt: $$(LICENSE_OUTPUT_PATH)/attribution/go-license.csv
+%TTRIBUTION.txt: SHOULD_RUN_IN_DOCKER:=$(shell command -v generate-attribution &> /dev/null || echo "true")
+%TTRIBUTION.txt: LICENSE_TARGET=$(LICENSE_OUTPUT_PATH)/attribution/go-license.csv 
+%TTRIBUTION.txt: $$(LICENSE_TARGET) | $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
 	@echo -e $(call TARGET_START_LOG)
 	@rm -f $(@F)
 	$(BASE_DIRECTORY)/build/lib/create_attribution.sh $(MAKE_ROOT) $(GOLANG_VERSION) $(MAKE_ROOT)/$(LICENSE_OUTPUT_PATH) $(@F) $(RELEASE_BRANCH)
@@ -746,19 +789,19 @@ clean-job-caches: $(and $(findstring presubmit,$(JOB_TYPE)),$(filter true,$(PRUN
 %/images/amd64 %/images/arm64: IMAGE_OUTPUT_TYPE?=oci
 %/images/amd64 %/images/arm64: IMAGE_OUTPUT?=dest=$(IMAGE_OUTPUT_DIR)/$(IMAGE_OUTPUT_NAME).tar
 
-%/images/push: $(BINARY_TARGETS) $(LICENSES_TARGETS_FOR_PREREQ) $(HANDLE_DEPENDENCIES_TARGET) ensure-buildctl ensure-buildkitd-host
+%/images/push: $(BINARY_TARGETS) $(LICENSES_TARGETS_FOR_PREREQ) $(HANDLE_DEPENDENCIES_TARGET) | ensure-buildctl ensure-buildkitd-host
 	@echo -e $(call TARGET_START_LOG)
 	$(BUILDCTL)
 	@echo -e $(call TARGET_END_LOG)
 
-%/images/amd64: $(BINARY_TARGETS) $(LICENSES_TARGETS_FOR_PREREQ) $(HANDLE_DEPENDENCIES_TARGET) ensure-buildctl ensure-buildkitd-host
+%/images/amd64: $(BINARY_TARGETS) $(LICENSES_TARGETS_FOR_PREREQ) $(HANDLE_DEPENDENCIES_TARGET) | ensure-buildctl ensure-buildkitd-host
 	@echo -e $(call TARGET_START_LOG)
 	@mkdir -p $(IMAGE_OUTPUT_DIR)
 	$(BUILDCTL)
 	$(WRITE_LOCAL_IMAGE_TAG)
 	@echo -e $(call TARGET_END_LOG)
 
-%/images/arm64: $(BINARY_TARGETS) $(LICENSES_TARGETS_FOR_PREREQ) $(HANDLE_DEPENDENCIES_TARGET) ensure-buildctl ensure-buildkitd-host
+%/images/arm64: $(BINARY_TARGETS) $(LICENSES_TARGETS_FOR_PREREQ) $(HANDLE_DEPENDENCIES_TARGET) | ensure-buildctl ensure-buildkitd-host
 	@echo -e $(call TARGET_START_LOG)
 	@mkdir -p $(IMAGE_OUTPUT_DIR)
 	$(BUILDCTL)
@@ -778,10 +821,10 @@ clean-job-caches: $(and $(findstring presubmit,$(JOB_TYPE)),$(filter true,$(PRUN
 %/cgo/amd64: IMAGE_PLATFORMS=linux/amd64
 %/cgo/arm64: IMAGE_PLATFORMS=linux/arm64
 
-%/cgo/amd64: ensure-jq
+%/cgo/amd64: | ensure-jq
 	$(if $(filter true, $(USE_DOCKER_FOR_CGO_BUILD)),$(CGO_DOCKER),$(BUILDCTL))
 
-%/cgo/arm64: ensure-jq
+%/cgo/arm64: | ensure-jq
 	$(if $(filter true, $(USE_DOCKER_FOR_CGO_BUILD)),$(CGO_DOCKER),$(BUILDCTL))
 
 # As an attempt to see if using docker is more stable for cgo builds in Codebuild
@@ -809,7 +852,7 @@ helm/pull:
 .PHONY: helm/build
 helm/build: $(LICENSES_TARGETS_FOR_PREREQ)
 helm/build: $(if $(filter true,$(REPO_NO_CLONE)),,$(HELM_GIT_CHECKOUT_TARGET))
-helm/build: $(if $(wildcard $(PROJECT_ROOT)/helm/patches),$(HELM_GIT_PATCH_TARGET),) ensure-helm ensure-skopeo
+helm/build: $(if $(wildcard $(PROJECT_ROOT)/helm/patches),$(HELM_GIT_PATCH_TARGET),) | ensure-helm ensure-skopeo
 	@echo -e $(call TARGET_START_LOG)
 	$(BUILD_LIB)/helm_copy.sh $(HELM_SOURCE_REPOSITORY) $(HELM_DESTINATION_REPOSITORY) $(HELM_DIRECTORY) $(OUTPUT_DIR)
 	$(BUILD_LIB)/helm_require.sh $(HELM_SOURCE_IMAGE_REPO) $(HELM_DESTINATION_REPOSITORY) $(OUTPUT_DIR) $(IMAGE_TAG) $(HELM_TAG) $(PROJECT_ROOT) $(LATEST) $(HELM_USE_UPSTREAM_IMAGE) $(HELM_IMAGE_LIST)
@@ -819,7 +862,7 @@ helm/build: $(if $(wildcard $(PROJECT_ROOT)/helm/patches),$(HELM_GIT_PATCH_TARGE
 
 # Build helm chart and push to registry defined in IMAGE_REPO.
 .PHONY: helm/push
-helm/push: helm/build ensure-helm
+helm/push: helm/build | ensure-helm
 	@echo -e $(call TARGET_START_LOG)
 	$(BUILD_LIB)/helm_push.sh $(IMAGE_REPO) $(HELM_DESTINATION_REPOSITORY) $(HELM_TAG) $(GIT_TAG) $(OUTPUT_DIR) $(LATEST)
 	@echo -e $(call TARGET_END_LOG)
@@ -907,13 +950,21 @@ add-generated-help-block:
 ## --------------------------------------
 #@ Update Helpers
 
-.PHONY: run-target-in-docker
-run-target-in-docker: # Run `MAKE_TARGET` using builder base docker container
-	$(BUILD_LIB)/run_target_docker.sh $(COMPONENT) $(MAKE_TARGET) $(IMAGE_REPO) "$(RELEASE_BRANCH)" "$(ARTIFACTS_BUCKET)" "$(BASE_DIRECTORY)" "$(GO_MOD_CACHE)"
+.PHONY: start-docker-builder
+start-docker-builder: # Start long lived builder base docker container
+	$(BUILD_LIB)/run_target_docker.sh $(COMPONENT) var-value-PULL_BASE_REF $(IMAGE_REPO) "$(RELEASE_BRANCH)" "$(ARTIFACTS_BUCKET)" "$(BASE_DIRECTORY)" "$(GO_MOD_CACHE)" "$(BUILDER_PLATFORM_ARCH)" false
 
 .PHONY: stop-docker-builder
 stop-docker-builder: # Clean up builder base docker container
-	docker rm -f -v eks-a-builder
+	@docker rm -f -v eks-a-builder
+
+.PHONY: run-buildkit-and-registry
+run-buildkit-and-registry: # Run buildkitd and a local docker registry as containers
+	$(MAKE) -C $(BASE_DIRECTORY) run-buildkit-and-registry
+
+.PHONY: stop-buildkit-and-registry
+stop-buildkit-and-registry: # Stop the buildkitd and a local docker registry containers
+	$(MAKE) -C $(BASE_DIRECTORY) stop-buildkit-and-registry
 
 .PHONY: generate
 generate: # Update UPSTREAM_PROJECTS.yaml
@@ -1027,11 +1078,26 @@ ensure-buildkitd-host:
 ## --------------------------------------
 ## Docker Helpers
 ## --------------------------------------
-# $1 - target
-define RUN_IN_DOCKER_TARGET
-.PHONY: run-$(1)-in-docker
-run-$(1)-in-docker: MAKE_TARGET=$(1)
-run-$(1)-in-docker: run-target-in-docker
-endef
+# since these targets will likely be file paths it has to be run-in-docker/ vs run-in-docker- otherwise make
+# will not properly match the stem. this requires a change to how we used to name these targets
+.PHONY: run-in-docker/%
+run-in-docker/%: MAKE_TARGET=$*
+run-in-docker/%: ensure-docker
+	@if [ ! -f $(MAKE_TARGET) ]; then \
+		set -e; \
+		echo -e $(call TARGET_START_LOG,run-$(MAKE_TARGET)-in-docker); \
+		source $(BUILD_LIB)/common.sh && build::common::echo_and_run $(BUILD_LIB)/run_target_docker.sh $(COMPONENT) $(MAKE_TARGET) $(IMAGE_REPO) "$(RELEASE_BRANCH)" "$(ARTIFACTS_BUCKET)" "$(BASE_DIRECTORY)" "$(GO_MOD_CACHE)" "$(BUILDER_PLATFORM_ARCH)" true; \
+		echo -e $(call TARGET_END_LOG,run-$(MAKE_TARGET)-in-docker); \
+	fi
 
-$(foreach target,$(IN_DOCKER_TARGETS),$(eval $(call RUN_IN_DOCKER_TARGET,$(target))))
+# backcompat old style run-<>-in-docker style targets which work for anything that does not have a / in the target
+.PHONY: run-%-in-docker
+run-%-in-docker: run-in-docker/%
+	@echo "Please switch to 'run-in-docker/$*' style targets"
+
+# make sure by default all targets run on the host
+# if we do not have this as a catch all target then the first target
+# which sets it to 0 will affect all the prereq targets for that target
+%: RUN_ON_HOST=1
+%: SHELL=bash
+%: SHOULD_RUN_IN_DOCKER?=$(MISSING_CORRECT_GO_VERSION)

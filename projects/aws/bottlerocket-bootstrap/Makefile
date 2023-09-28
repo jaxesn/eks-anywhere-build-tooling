@@ -89,8 +89,10 @@ clean-extra:
 
 clean: clean-extra
 
-unit-test:
+unit-test: $$(call ENABLE_DOCKER_FOR_TARGET,$$@)
+	@echo -e $(call TARGET_START_LOG)
 	go test ./...
+	@echo -e $(call TARGET_END_LOG)
 
 .PHONY: mocks
 mocks: $(MOCKGEN)

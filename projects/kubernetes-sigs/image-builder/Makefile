@@ -67,6 +67,9 @@ HAS_RELEASE_BRANCHES=true
 HAS_LICENSES=false
 SIMPLE_CREATE_TARBALLS=false
 
+# if running locally and do not want to try and create ec2 instance
+SKIP_METAL_INSTANCE_TEST?=false
+
 # to support a no op attribution target
 TARGETS_ALLOWED_WITH_NO_RELEASE_BRANCH=binaries checksums attribution
 
@@ -131,7 +134,7 @@ BUILD_OVA_TARGETS+=build-ova-ubuntu-2004-efi fake-ubuntu-2004-ova-efi.ova upload
 
 # only running release-raw-ubuntu-2004 on presubmit here since we are just validating the instance creation and do not need to run for every OS
 # tinkerbell/bare metal node images
-BUILD_RAW_TARGETS=$(foreach os,ubuntu-2004 ubuntu-2204 redhat-8,build-raw-$(os) $(call FAKE_IMAGE_PATH_FROM_OS_WITH_VER,raw,$(os)) upload-artifacts-raw-$(os)) release-raw-ubuntu-2004
+BUILD_RAW_TARGETS=$(foreach os,ubuntu-2004 ubuntu-2204 redhat-8,build-raw-$(os) $(call FAKE_IMAGE_PATH_FROM_OS_WITH_VER,raw,$(os)) upload-artifacts-raw-$(os)) $(if $(filter true,$(SKIP_METAL_INSTANCE_TEST)),,release-raw-ubuntu-2004)
 
 # cloud stack node images
 BUILD_CLOUDSTACK_TARGETS=build-cloudstack-redhat-8 $(call FAKE_IMAGE_PATH_FROM_OS_WITH_VER,cloudstack,redhat-8) upload-artifacts-cloudstack-redhat-8
@@ -218,7 +221,7 @@ setup-ami-share:
 	@echo -e $(call TARGET_END_LOG)
 
 .PHONY: setup-packer-configs-%
-setup-packer-configs-%: $(GIT_PATCH_TARGET) ensure-jq ensure-yq
+setup-packer-configs-%: $(GIT_PATCH_TARGET) | ensure-jq ensure-yq
 	@echo -e $(call TARGET_START_LOG)
 	build/setup_packer_configs.sh $(RELEASE_BRANCH) $(IMAGE_FORMAT) $(IMAGE_OS) $(ARTIFACTS_BUCKET) $(FINAL_IMAGE_DIR) $(ADDITIONAL_PAUSE_$(RELEASE_BRANCH)_FROM) $(LATEST) $(IMAGE_BUILDER_DIR) $(IMAGE_OS_DIR) $(IMAGE_OS_VERSION)
 	@echo -e $(call TARGET_END_LOG)
@@ -247,7 +250,7 @@ $(ARTIFACTS_PATH)/bottlerocket/% upload-bottlerocket-%: IMAGE_OS=bottlerocket
 $(ARTIFACTS_PATH)/bottlerocket/%: IMAGE_OS_VERSION=$(word 1,$(subst /, ,$(*D)))
 $(ARTIFACTS_PATH)/bottlerocket/%: IMAGE_FORMAT=$(word 2,$(subst /, ,$(*D)))
 $(ARTIFACTS_PATH)/bottlerocket/%: export BOTTLEROCKET_ROOT_JSON_PATH=$(BOTTLEROCKET_DOWNLOAD_PATH)/root.json
-$(ARTIFACTS_PATH)/bottlerocket/%: ensure-yq ensure-tuftool
+$(ARTIFACTS_PATH)/bottlerocket/%: | ensure-yq ensure-tuftool
 	@echo -e $(call TARGET_START_LOG)
 	mkdir -p $(@D) $(BOTTLEROCKET_DOWNLOAD_PATH)
 	# This configuration supports local installations and checksum validations of root.json file
@@ -311,14 +314,14 @@ release-ami-%: EXPORT_AMI_BUCKET?=$(ARTIFACTS_BUCKET)
 release-ami-%: AMI_S3_DST=$(EXPORT_AMI_BUCKET)/$(ARTIFACTS_UPLOAD_PATH)/ami/$(IMAGE_OS_DIR)
 release-ami-%: EXPORT_AMI_DST=$(AMI_S3_DST)/$(GIT_HASH)
 release-ami-%: LATEST_AMI_S3_URL=$(AMI_S3_DST)/$(LATEST)/ubuntu.raw
-release-ami-%: validate-supported-image-% setup-ami-share ensure-jq
+release-ami-%: validate-supported-image-% setup-ami-share | ensure-jq
 	@echo -e $(call TARGET_START_LOG)
 	build/build_image.sh $(IMAGE_OS) $(IMAGE_OS_VERSION) $(RELEASE_BRANCH) $(IMAGE_FORMAT) $(ARTIFACTS_BUCKET) $(LATEST)
 	build/export-ami-to-s3.sh $(RELEASE_BRANCH) $(MANIFEST_OUTPUT) raw $(EXPORT_AMI_DST) $(LATEST_AMI_S3_URL)
 	@echo -e $(call TARGET_END_LOG)
 
 release-ova-%: IMAGE_FORMAT=ova
-release-ova-%: validate-supported-image-% ensure-jq
+release-ova-%: validate-supported-image-% | ensure-jq
 	@echo -e $(call TARGET_START_LOG)
 	build/build_image.sh $(IMAGE_OS) $(IMAGE_OS_VERSION) $(RELEASE_BRANCH) $(IMAGE_FORMAT) $(ARTIFACTS_BUCKET) $(LATEST) $(IMAGE_OS_FIRMWARE)
 	@echo -e $(call TARGET_END_LOG)
@@ -334,7 +337,7 @@ release-cloudstack-%: release-image-build-on-metal-%
 # used for cloudstack and raw
 # clone the repo first since its scp'd to the temporary instance which runs kvm
 release-image-build-on-metal-%: IMAGE_FORMAT?=raw
-release-image-build-on-metal-%: validate-supported-image-% $(GIT_PATCH_TARGET) ensure-jq
+release-image-build-on-metal-%: validate-supported-image-% $(GIT_PATCH_TARGET) | ensure-jq
 	@echo -e $(call TARGET_START_LOG)
 	build/build_image_on_metal.sh $(BASE_DIRECTORY) $(PROJECT_PATH) $(RELEASE_BRANCH) $(RAW_IMAGE_BUILD_AMI) $(RAW_IMAGE_BUILD_INSTANCE_TYPE) $(RAW_IMAGE_BUILD_KEY_NAME) $(IMAGE_OS) $(IMAGE_OS_VERSION) $(IMAGE_FORMAT) $(LATEST) $(FINAL_IMAGE_DIR) $(BRANCH_NAME)
 	@echo -e $(call TARGET_END_LOG)
