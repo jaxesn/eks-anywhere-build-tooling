@@ -29,6 +29,8 @@ EXCLUDE_FROM_STAGING_BUILDSPEC=true
 SKIP_ON_RELEASE_BRANCH=true
 BUILDSPEC_COMPUTE_TYPE=BUILD_GENERAL1_LARGE
 
+PROJECT_DEPENDENCIES=eksa/prometheus/node_exporter
+
 HAS_HELM_CHART=true
 HELM_SOURCE_OWNER=prometheus-community
 HELM_SOURCE_REPOSITORY=helm-charts
@@ -54,12 +56,13 @@ $(FIX_LICENSES_CRONEXPR_TARGET): | $(GO_MOD_DOWNLOAD_TARGETS)
 # the standard license file name it is not found by go-licenses
 	cp $(@D)/APLv2 $@
 
-$(WEB_UI_TARGETS):
-	@echo '>> npm install and npm build'
-	cd prometheus/web/ui && npm install && CI="" npm run build
-	@echo ">> bundling npm licenses"
-	build/cp_npm_licenses.sh
-	@echo '>> compressing assets'
+$(WEB_UI_TARGETS): NPM_AVAIL=$(shell command -v npm &> /dev/null && echo "true" || echo "false")
+$(WEB_UI_TARGETS): | $$(call ENABLE_DOCKER,$$(NPM_AVAIL))
+	@echo '>> npm install and npm build'; \
+	npm -C prometheus/web/ui install && CI="" npm -C prometheus/web/ui run build; \
+	echo ">> bundling npm licenses"; \
+	build/cp_npm_licenses.sh; \
+	echo '>> compressing assets'; \
 	build/compress_assets.sh
 
 $(EXTRA_DOCKER_FILE_TARGETS):

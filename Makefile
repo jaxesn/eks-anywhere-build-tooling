@@ -1,11 +1,12 @@
-MAKEFLAGS+=--no-builtin-rules --warn-undefined-variables
+MAKEFLAGS+=--no-builtin-rules --warn-undefined-variables --no-print-directory
 .SUFFIXES:
 
 BASE_DIRECTORY:=$(abspath .)
 BUILD_LIB=${BASE_DIRECTORY}/build/lib
 SHELL_TRACE?=false
-SHELL:=$(if $(filter true,$(SHELL_TRACE)),$(BUILD_LIB)/make_shell_trace.sh,bash)
-.SHELLFLAGS:=$(if $(filter true,$(SHELL_TRACE)),-c,-eu -o pipefail -c)
+DEFAULT_SHELL:=$(if $(filter true,$(SHELL_TRACE)),$(BUILD_LIB)/make_shell.sh trace,bash)
+SHELL:=$(DEFAULT_SHELL)
+.SHELLFLAGS:=-eu -o pipefail -c
 
 AWS_ACCOUNT_ID?=$(shell aws sts get-caller-identity --query Account --output text)
 AWS_REGION?=us-west-2
@@ -17,8 +18,12 @@ RELEASE_BRANCH?=
 GIT_HASH=$(shell git -C $(BASE_DIRECTORY) rev-parse HEAD)
 ALL_PROJECTS=$(shell $(BUILD_LIB)/all_projects.sh $(BASE_DIRECTORY))
 
+LATEST_EKSD_RELEASE=$(shell source $(BUILD_LIB)/common.sh && build::eksd_releases::get_release_branch)
+
 # $1 - project name using _ as separator, ex: rancher_local-path-provisoner
 PROJECT_PATH_MAP=projects/$(patsubst $(firstword $(subst _, ,$(1)))_%,$(firstword $(subst _, ,$(1)))/%,$(1))
+
+BUILDER_PLATFORM_ARCH=$(if $(filter x86_64,$(shell uname -m)),amd64,arm64)
 
 # $1 - variable name to resolve and cache
 CACHE_RESULT = $(if $(filter undefined,$(origin _cached-$1)),$(eval _cached-$1 := 1)$(eval _cache-$1 := $($1)),)$(_cache-$1)
@@ -26,10 +31,11 @@ CACHE_RESULT = $(if $(filter undefined,$(origin _cached-$1)),$(eval _cached-$1 :
 # $1 - variable name
 CACHE_VARIABLE=$(eval _old-$(1)=$(value $(1)))$(eval $(1)=$$(call CACHE_RESULT,_old-$(1)))
 
-CACHE_VARS=ALL_PROJECTS AWS_ACCOUNT_ID GIT_HASH
+CACHE_VARS=ALL_PROJECTS AWS_ACCOUNT_ID BUILDER_PLATFORM_ARCH GIT_HASH LATEST_EKSD_RELEASE
 $(foreach v,$(CACHE_VARS),$(call CACHE_VARIABLE,$(v)))
 
 .PHONY: clean-project-%
+clean-project-%: export RELEASE_BRANCH=$(LATEST_EKSD_RELEASE)
 clean-project-%:
 	$(eval PROJECT_PATH=$(call PROJECT_PATH_MAP,$*))
 	$(MAKE) clean -C $(PROJECT_PATH)
@@ -37,6 +43,64 @@ clean-project-%:
 .PHONY: clean
 clean: $(addprefix clean-project-, $(ALL_PROJECTS))
 	rm -rf _output
+
+.PHONY: build-all
+build-all: build-all-warning $(foreach project,$(ALL_PROJECTS),$(call PROJECT_PATH_MAP,$(project))/eks-anywhere-full-build-complete)
+
+%/eks-anywhere-full-build-complete: export RELEASE_BRANCH=$(LATEST_EKSD_RELEASE)
+%/eks-anywhere-full-build-complete: export SKIP_METAL_INSTANCE_TEST=true
+%/eks-anywhere-full-build-complete: export IMAGE_PLATFORMS=linux/$(BUILDER_PLATFORM_ARCH)
+# override this on the command line to true if you want to push to your own s3 bucket
+%/eks-anywhere-full-build-complete: UPLOAD_ARTIFACTS_TO_S3?=false
+%/eks-anywhere-full-build-complete:
+	@set -eu -o pipefail; \
+	export IMAGE_REPO=$(IMAGE_REPO); \
+	if [[ "$(@D)" == *"aws/cluster-api-provider-aws-snow"* ]]; then \
+		echo "Skipping aws/cluster-api-provider-aws-snow: container images are pulled cross account"; \
+		exit; \
+	elif [[ "$(@D)" == *"kubernetes-sigs/kind"* ]]; then \
+		export IMAGE_PLATFORMS=linux/amd64,linux/arm64; \
+	elif [[ "$(@D)" == *"tinkerbell/hook"* ]]; then \
+		echo "Warning tinkerbell/hook needs to be built with a public ecr repo so docker container can pull"; \
+		export IMAGE_REPO=$(ECR_PUBLIC_URI); \
+		export IMAGE_PLATFORMS=linux/amd64,linux/arm64; \
+	elif [[ "$(@D)" == *"goharbor/harbor"* ]]; then \
+		echo "Skipping /goharbor/harbor: we patch vendor directory so we skip go mod download, which can cause slight checksum differences"; \
+		echo "run the 'clean-go-cache' target before running harbor if you want to build with matching checksums"; \
+		exit; \
+	fi; \
+	if  [ -n "$$($(MAKE) -C $(@D) var-value-PROJECT_DEPENDENCIES)" ]; then \
+		PROJECT_DEPS=$$($(MAKE) -C $(@D) var-value-PROJECT_DEPENDENCIES); \
+		DEPS=($${PROJECT_DEPS// / }); \
+  		for dep in "$${DEPS[@]}"; do \
+			if [[ "$${dep}" = *"eksa"* ]]; then \
+				echo "Running make $${dep#eksa/} as dependency for $(@D)"; \
+				$(MAKE) projects/$${dep#"eksa/"}/eks-anywhere-full-build-complete; \
+			fi; \
+		done; \
+	fi; \
+	echo "Running make binaries/attribution for $(@D)"; \
+	make -C $(@D) gather-licenses binaries; \
+	make -C $(@D) attribution; \
+	if  [ -n "$$($(MAKE) -C $(@D) var-value-IMAGE_NAMES)" ]; then \
+		echo "Creating ECR repos and pushing images for $(@D)"; \
+		make -C $(@D) create-ecr-repos images; \
+	fi; \
+	make -C $(@D) build; \
+	if  [ "$$($(MAKE) -C $(@D) var-value-HAS_S3_ARTIFACTS)" = "true" ] && [ "$(UPLOAD_ARTIFACTS_TO_S3)" = "true" ]; then \
+		echo "Uploading artifacts to s3 for $(@D)"; \
+		make -C $(@D) upload-artifacts ;\
+	fi; \
+	if  [ "$$($(MAKE) -C $(@D) var-value-HAS_HELM_CHART)" = "true" ]; then \
+		echo "Pushing helm charts for $(@D)"; \
+		make -C $(@D) create-ecr-repos helm/push; \
+	fi; \
+	touch $@
+
+.PHONY: build-all-warning
+build-all-warning:
+	@echo "*** Warning: this target is not meant to used except for specific testing situations ***"
+	@echo "*** this will likely fail and either way run for a really long time ***"
 
 .PHONY: add-generated-help-block-project-%
 add-generated-help-block-project-%:
@@ -70,14 +134,18 @@ update-checksum-files: $(addprefix checksum-files-project-, $(ALL_PROJECTS))
 update-attribution-files: add-generated-help-block attribution-files
 	build/update-attribution-files/create_pr.sh
 
+.PHONY: start-docker-builder
+start-docker-builder: # Start long lived builder base docker container
+	@$(MAKE) -C projects/aws/eks-anywhere-build-tooling start-docker-builder
+
 .PHONY: stop-docker-builder
 stop-docker-builder:
 	docker rm -f -v eks-a-builder
 
 .PHONY: run-buildkit-and-registry
 run-buildkit-and-registry:
-	docker run -d --name buildkitd --net host --privileged moby/buildkit:v0.10.6-rootless
-	docker run -d --name registry  --net host registry:2
+	docker run --rm -d --name buildkitd --net host --privileged moby/buildkit:v0.12.2-rootless
+	docker run --rm -d --name registry  --net host registry:2
 
 .PHONY: stop-buildkit-and-registry
 stop-buildkit-and-registry:
