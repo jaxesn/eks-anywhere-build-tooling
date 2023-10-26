@@ -44,63 +44,80 @@ clean-project-%:
 clean: $(addprefix clean-project-, $(ALL_PROJECTS))
 	rm -rf _output
 
-.PHONY: build-all
-build-all: build-all-warning $(foreach project,$(ALL_PROJECTS),$(call PROJECT_PATH_MAP,$(project))/eks-anywhere-full-build-complete)
 
+############################## BUILD ALL ###################################
+
+.PHONY: build-all
+build-all: build-all-warning
+# Build projects with dependecies first to try and validate if there are any missing
+	@set -eu -o pipefail; \
+	PROJECTS="$(foreach project,$(ALL_PROJECTS),$(call PROJECT_PATH_MAP,$(project)))"; \
+	PROJS=($${PROJECTS// / }); \
+  	for proj in "$${PROJS[@]}"; do \
+		if  [ -n "$$($(MAKE) -C $$proj var-value-PROJECT_DEPENDENCIES)" ] && [ ! -f $$proj/eks-anywhere-full-build-complete ]; then \
+			$(MAKE) $$proj/eks-anywhere-full-build-complete; \
+		fi; \
+	done; \
+	for proj in "$${PROJS[@]}"; do \
+		if  [ ! -f $$proj/eks-anywhere-full-build-complete ]; then \
+			$(MAKE) $$proj/eks-anywhere-full-build-complete; \
+		fi; \
+	done
+
+# Specific overrides
+projects/kubernetes-sigs/kind/eks-anywhere-full-build-complete: override IMAGE_PLATFORMS=linux/amd64,linux/arm64
+
+# tinkerbell/hook needs to be built with a public ecr repo so docker container can pull
+projects/tinkerbell/hook/eks-anywhere-full-build-complete: IMAGE_REPO=$(ECR_PUBLIC_URI)
+projects/tinkerbell/hook/eks-anywhere-full-build-complete: override IMAGE_PLATFORMS=linux/amd64,linux/arm64
+
+# Skips
+projects/aws/cluster-api-provider-aws-snow/eks-anywhere-full-build-complete:
+	@echo "Skipping aws/cluster-api-provider-aws-snow: container images are pulled cross account"
+
+projects/goharbor/harbor/eks-anywhere-full-build-complete:
+	@echo "Skipping /goharbor/harbor: we patch vendor directory so we skip go mod download, which can cause slight checksum differences"
+	@echo "run the 'clean-go-cache' target before running harbor if you want to build with matching checksums"
+
+projects/aws/eks-a-admin-image/eks-anywhere-full-build-complete:
+	@echo "Skipping aws/eks-a-admin-image: this build is only meant to be run in the build account"
+
+# Actual target
 %/eks-anywhere-full-build-complete: export RELEASE_BRANCH=$(LATEST_EKSD_RELEASE)
 %/eks-anywhere-full-build-complete: export SKIP_METAL_INSTANCE_TEST=true
-%/eks-anywhere-full-build-complete: export IMAGE_PLATFORMS=linux/$(BUILDER_PLATFORM_ARCH)
+%/eks-anywhere-full-build-complete: IMAGE_PLATFORMS=linux/$(BUILDER_PLATFORM_ARCH)
 # override this on the command line to true if you want to push to your own s3 bucket
 %/eks-anywhere-full-build-complete: UPLOAD_ARTIFACTS_TO_S3?=false
 %/eks-anywhere-full-build-complete:
 	@set -eu -o pipefail; \
-	export IMAGE_REPO=$(IMAGE_REPO); \
-	if [[ "$(@D)" == *"aws/cluster-api-provider-aws-snow"* ]]; then \
-		echo "Skipping aws/cluster-api-provider-aws-snow: container images are pulled cross account"; \
-		exit; \
-	elif [[ "$(@D)" == *"kubernetes-sigs/kind"* ]]; then \
-		export IMAGE_PLATFORMS=linux/amd64,linux/arm64; \
-	elif [[ "$(@D)" == *"tinkerbell/hook"* ]]; then \
-		echo "Warning tinkerbell/hook needs to be built with a public ecr repo so docker container can pull"; \
-		export IMAGE_REPO=$(ECR_PUBLIC_URI); \
-		export IMAGE_PLATFORMS=linux/amd64,linux/arm64; \
-	elif [[ "$(@D)" == *"goharbor/harbor"* ]]; then \
-		echo "Skipping /goharbor/harbor: we patch vendor directory so we skip go mod download, which can cause slight checksum differences"; \
-		echo "run the 'clean-go-cache' target before running harbor if you want to build with matching checksums"; \
-		exit; \
-	fi; \
 	if  [ -n "$$($(MAKE) -C $(@D) var-value-PROJECT_DEPENDENCIES)" ]; then \
 		PROJECT_DEPS=$$($(MAKE) -C $(@D) var-value-PROJECT_DEPENDENCIES); \
 		DEPS=($${PROJECT_DEPS// / }); \
   		for dep in "$${DEPS[@]}"; do \
 			if [[ "$${dep}" = *"eksa"* ]]; then \
 				echo "Running make $${dep#eksa/} as dependency for $(@D)"; \
-				$(MAKE) projects/$${dep#"eksa/"}/eks-anywhere-full-build-complete; \
+				$(MAKE) projects/$${dep#"eksa/"}/eks-anywhere-full-build-complete IMAGE_REPO=$(IMAGE_REPO) IMAGE_PLATFORMS=$(IMAGE_PLATFORMS); \
 			fi; \
 		done; \
 	fi; \
-	echo "Running make binaries/attribution for $(@D)"; \
-	make -C $(@D) gather-licenses binaries; \
-	make -C $(@D) attribution; \
-	if  [ -n "$$($(MAKE) -C $(@D) var-value-IMAGE_NAMES)" ]; then \
-		echo "Creating ECR repos and pushing images for $(@D)"; \
-		make -C $(@D) create-ecr-repos images; \
+	TARGETS="attribution release"; \
+	if  [ -n "$$($(MAKE) -C $(@D) var-value-IMAGE_NAMES)" ] || [ "$$($(MAKE) -C $(@D) var-value-HAS_HELM_CHART)" = "true" ]; then \
+		TARGETS="create-ecr-repos $${TARGETS}"; \
 	fi; \
-	make -C $(@D) build; \
-	if  [ "$$($(MAKE) -C $(@D) var-value-HAS_S3_ARTIFACTS)" = "true" ] && [ "$(UPLOAD_ARTIFACTS_TO_S3)" = "true" ]; then \
-		echo "Uploading artifacts to s3 for $(@D)"; \
-		make -C $(@D) upload-artifacts ;\
+	if [ "$(UPLOAD_ARTIFACTS_TO_S3)" = "true" ]; then \
+		TARGETS+=" UPLOAD_DRY_RUN=false UPLOAD_CREATE_PUBLIC_ACL=false"; \
 	fi; \
-	if  [ "$$($(MAKE) -C $(@D) var-value-HAS_HELM_CHART)" = "true" ]; then \
-		echo "Pushing helm charts for $(@D)"; \
-		make -C $(@D) create-ecr-repos helm/push; \
-	fi; \
+	TARGETS+=" IMAGE_REPO=$(IMAGE_REPO) IMAGE_PLATFORMS=$(IMAGE_PLATFORMS)"; \
+	echo "Running 'make $${TARGETS}' for $(@D)"; \
+	make -C $(@D) $${TARGETS}; \
 	touch $@
 
 .PHONY: build-all-warning
 build-all-warning:
 	@echo "*** Warning: this target is not meant to used except for specific testing situations ***"
 	@echo "*** this will likely fail and either way run for a really long time ***"
+
+#########################################################################
 
 .PHONY: add-generated-help-block-project-%
 add-generated-help-block-project-%:
