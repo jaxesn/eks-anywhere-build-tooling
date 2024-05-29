@@ -11,7 +11,7 @@ TINK_CONTROLLER_IMAGE_COMPONENT=tinkerbell/tink/tink-controller
 TINK_SERVER_IMAGE_COMPONENT=tinkerbell/tink/tink-server
 TINK_WORKER_IMAGE_COMPONENT=tinkerbell/tink/tink-worker
 
-IMAGE_NAMES=tink-controller tink-server tink-worker
+IMAGE_NAMES=tink-controller tink-server tink-worker tink-relay
 
 BINARY_TARGET_FILES=tink-controller tink-server tink-worker
 SOURCE_PATTERNS=./cmd/tink-controller ./cmd/tink-server ./cmd/tink-worker
@@ -24,6 +24,8 @@ EXTRA_GO_LDFLAGS=-X main.version=$(VERSION)
 HAS_S3_ARTIFACTS=true
 
 include $(BASE_DIRECTORY)/Common.mk
+
+tink-relay/images/%: BASE_IMAGE_NAME=eks-distro-minimal-base-glibc
 
 s3-artifacts: create-manifests
 
