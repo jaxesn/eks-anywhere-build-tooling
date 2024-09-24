@@ -1,0 +1,67 @@
+From 897f0556f1af238006df5c98db50408ed0f286a4 Mon Sep 17 00:00:00 2001
+From: Prow Bot <prow@amazonaws.com>
+Date: Sat, 31 Aug 2024 03:48:13 +0000
+Subject: [PATCH 2/2] add moby config to dockerfile
+
+---
+ pkg/dhcpcd/Dockerfile   | 2 ++
+ pkg/getty/Dockerfile    | 2 ++
+ pkg/modprobe/Dockerfile | 2 ++
+ pkg/openntpd/Dockerfile | 2 ++
+ 4 files changed, 8 insertions(+)
+
+diff --git a/pkg/dhcpcd/Dockerfile b/pkg/dhcpcd/Dockerfile
+index ed760cfed..0ff5500e9 100644
+--- a/pkg/dhcpcd/Dockerfile
++++ b/pkg/dhcpcd/Dockerfile
+@@ -10,6 +10,8 @@ RUN apk add --no-cache --initdb -p /out \
+ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+ 
+ FROM scratch
++ARG MOBY_CONFIG
++LABEL "org.mobyproject.config"="${MOBY_CONFIG}"
+ ENTRYPOINT []
+ CMD []
+ WORKDIR /
+diff --git a/pkg/getty/Dockerfile b/pkg/getty/Dockerfile
+index ae10de07d..60d687065 100644
+--- a/pkg/getty/Dockerfile
++++ b/pkg/getty/Dockerfile
+@@ -27,6 +27,8 @@ RUN cp /out/usr/bin/setsid /out/usr/bin/setsid.getty
+ RUN rm -rf /out/etc/inittab
+ 
+ FROM scratch
++ARG MOBY_CONFIG
++LABEL "org.mobyproject.config"="${MOBY_CONFIG}"
+ ENTRYPOINT ["/sbin/tini","-s","-v","--"]
+ WORKDIR /
+ COPY --from=mirror /out/ /
+diff --git a/pkg/modprobe/Dockerfile b/pkg/modprobe/Dockerfile
+index 0cb683fa6..3c1cab58c 100644
+--- a/pkg/modprobe/Dockerfile
++++ b/pkg/modprobe/Dockerfile
+@@ -7,6 +7,8 @@ RUN apk add --no-cache --initdb -p /out \
+ RUN rm -rf /out/var/cache
+ 
+ FROM scratch
++ARG MOBY_CONFIG
++LABEL "org.mobyproject.config"="${MOBY_CONFIG}"
+ ENTRYPOINT []
+ CMD []
+ WORKDIR /
+diff --git a/pkg/openntpd/Dockerfile b/pkg/openntpd/Dockerfile
+index b8c073005..4fd4928c3 100644
+--- a/pkg/openntpd/Dockerfile
++++ b/pkg/openntpd/Dockerfile
+@@ -10,6 +10,8 @@ RUN apk add --no-cache --initdb -p /out \
+ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+ 
+ FROM scratch
++ARG MOBY_CONFIG
++LABEL "org.mobyproject.config"="${MOBY_CONFIG}"
+ ENTRYPOINT []
+ CMD []
+ WORKDIR /
+-- 
+2.34.1
+

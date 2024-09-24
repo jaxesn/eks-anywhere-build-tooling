@@ -18,6 +18,8 @@ SOURCE_PATTERNS=. ./cmd/rngd . . ./cmd/init ./cmd/rc.init ./cmd/service
 BINARY_PLATFORMS?=linux/$(BUILDER_PLATFORM_ARCH)
 IMAGE_PLATFORMS?=linux/$(BUILDER_PLATFORM_ARCH)
 USERMODE_HELPER_TARGETS=$(foreach platform,$(IMAGE_PLATFORMS),$(OUTPUT_BIN_DIR)/$(subst /,-,$(platform))/usermode-helper)
+DHCPCD_TARGETS=$(foreach platform,$(IMAGE_PLATFORMS),$(OUTPUT_BIN_DIR)/$(subst /,-,$(platform))/dhcpcd/usr/sbin/dhcpcd)
+OPENNTPD_TARGETS=$(foreach platform,$(IMAGE_PLATFORMS),$(OUTPUT_BIN_DIR)/$(subst /,-,$(platform))/openntpd/usr/sbin/ntpd)
 
 IMAGE_NAMES=init ca-certificates firmware rngd sysctl sysfs modprobe dhcpcd openntpd getty
 
@@ -83,10 +85,22 @@ $(OUTPUT_BIN_DIR)/linux-%/rngd: EXTRA_GO_LDFLAGS=-extldflags -static
 $(OUTPUT_BIN_DIR)/linux-%/rngd: EXTRA_GOBUILD_FLAGS=-tags netgo,osusergo,static_build
 $(OUTPUT_DIR)/rngd/attribution/go-license.csv: CGO_CREATE_BINARIES=true
 
-# we are building these using the upstream dockerfiles for now
-# the plan is to convert these to our standard build process
-ca-certificates/images/% dhcpcd/images/% firmware/images/% getty/images/% init/images/% modprobe/images/% openntpd/images/%: DOCKERFILE_FOLDER=$(REPO)/pkg/$(IMAGE_NAME)
-ca-certificates/images/% dhcpcd/images/% firmware/images/% getty/images/% modprobe/images/% openntpd/images/%: IMAGE_CONTEXT_DIR=$(REPO)/pkg/$(IMAGE_NAME)
+firmware/images/%: DOCKERFILE_FOLDER=$(REPO)/pkg/$(IMAGE_NAME)
+firmware/images/%: IMAGE_CONTEXT_DIR=$(REPO)/pkg/$(IMAGE_NAME)
+
+rngd/images/% sysctl/images/% sysfs/images/% modprobe/images/% dhcpcd/images/% openntpd/images/% getty/images/%: IMAGE_BUILD_ARGS=MOBY_CONFIG
+
+init/images/% getty/images/%: BASE_IMAGE=public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
+
+ca-certificates/images/% modprobe/images/% dhcpcd/images/% openntpd/images/%: BASE_IMAGE_NAME=eks-distro-minimal-base-glibc
+ca-certificates/images/% modprobe/images/% dhcpcd/images/% openntpd/images/%: BASE_IMAGE_OS_VERSION=al2023
+
+$(call IMAGE_TARGETS_FOR_NAME,init): $(USERMODE_HELPER_TARGETS)
+$(call IMAGE_TARGETS_FOR_NAME,dhcpcd): $(DHCPCD_TARGETS)
+
+$(call IMAGE_TARGETS_FOR_NAME,openntpd): $(OPENNTPD_TARGETS)
+$(call IMAGE_TARGETS_FOR_NAME,openntpd): openntpd-useradd/images/export
+openntpd-useradd/images/export: IMAGE_USERADD_USER_NAME=_ntp
 
 $(OUTPUT_BIN_DIR)/%/usermode-helper: MAKEFLAGS=
 $(OUTPUT_BIN_DIR)/%/usermode-helper: PLATFORM=$(subst -,/,$*)
@@ -94,6 +108,38 @@ $(OUTPUT_BIN_DIR)/%/usermode-helper: $(GIT_PATCH_TARGET) | $$(call ENABLE_DOCKER
 	@mkdir -p $(MAKE_ROOT)/$(@D); \
 	LDFLAGS=-static CFLAGS=-Werror $(MAKE) -C $(REPO)/pkg/init usermode-helper; \
 	mv $(REPO)/pkg/init/usermode-helper $@
+
+$(OUTPUT_BIN_DIR)/%/dhcpcd/usr/sbin/dhcpcd: MAKEFLAGS=
+$(OUTPUT_BIN_DIR)/%/dhcpcd/usr/sbin/dhcpcd: PLATFORM=$(subst -,/,$*)
+$(OUTPUT_BIN_DIR)/%/dhcpcd/usr/sbin/dhcpcd: OUTPUT_PATH=$(MAKE_ROOT)/$(OUTPUT_BIN_DIR)/$*/dhcpcd
+$(OUTPUT_BIN_DIR)/%/dhcpcd/usr/sbin/dhcpcd: $(GIT_PATCH_TARGET) | $$(call ENABLE_DOCKER_PLATFORM,$$(PLATFORM))
+	mkdir -p $(OUTPUT_DIR)/dhcpcd; \
+	cd $(OUTPUT_DIR)/dhcpcd; \
+	curl -qL --retry-connrefused -O https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.0.10/dhcpcd-10.0.10.tar.xz; \
+	echo "d582012992efddd2442bb1213c518a37d90febbcf8b11f8e76448c710dacad27  dhcpcd-10.0.10.tar.xz" > shasum; \
+	sha256sum -c shasum; \
+	tar -xf dhcpcd-10.0.10.tar.xz; \
+	cd dhcpcd-10.0.10; \
+	./configure; \
+	make; \
+	DESTDIR=$(OUTPUT_PATH) make install; \
+	mv $(OUTPUT_PATH)/sbin $(OUTPUT_PATH)/usr
+
+$(OUTPUT_BIN_DIR)/%/openntpd/usr/sbin/ntpd: MAKEFLAGS=
+$(OUTPUT_BIN_DIR)/%/openntpd/usr/sbin/ntpd: PLATFORM=$(subst -,/,$*)
+$(OUTPUT_BIN_DIR)/%/openntpd/usr/sbin/ntpd: OUTPUT_PATH=$(MAKE_ROOT)/$(OUTPUT_BIN_DIR)/$*/openntpd
+$(OUTPUT_BIN_DIR)/%/openntpd/usr/sbin/ntpd: $(GIT_PATCH_TARGET) | $$(call ENABLE_DOCKER_PLATFORM,$$(PLATFORM))
+	mkdir -p $(OUTPUT_DIR)/openntpd $(OUTPUT_PATH)/usr; \
+	cd $(OUTPUT_DIR)/openntpd; \
+	curl -qL --retry-connrefused -O https://cdn.openbsd.org/pub/OpenBSD/OpenNTPD/openntpd-6.8p1.tar.gz; \
+	echo "8582db838a399153d4a17f2a76518b638cc3020f58028575bf54127518f55a46  openntpd-6.8p1.tar.gz" > shasum; \
+	sha256sum -c shasum; \
+	tar -xf openntpd-6.8p1.tar.gz; \
+	cd openntpd-6.8p1; \
+	./configure --prefix=/usr; \
+	make; \
+	DESTDIR=$(OUTPUT_PATH) make install
+
 
 $(FIX_LICENSES_SUB_MOD_TARGETS): $(GIT_PATCH_TARGET)
 # the src/cmd/linuxkit dir does not have the license file, copy from repo root

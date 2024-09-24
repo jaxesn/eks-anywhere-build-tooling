@@ -1,0 +1,723 @@
+FI stub: Loaded initrd from LINUX_EFI_INITRD_MEDIA_GUID device path
+[    0.000000] Linux version 5.10.223-hook (hook@tinkerbell) (gcc (GCC) 11.4.1 20230605 (Red Hat 11.4.1-2), GNU ld version 2.39-6.amzn2023.0.10) #1 SMP Fri Aug 23 17:35:54 UTC 2024
+[    0.000000] Command line: tink_worker_image=127.0.0.1/embedded/tink-worker tinkerbell_tls=false console=ttyS0 initrd=initrd
+[    0.000000] BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009ffff] usable
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x00000000007fffff] usable
+[    0.000000] BIOS-e820: [mem 0x0000000000800000-0x0000000000807fff] ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x0000000000808000-0x000000000080afff] usable
+[    0.000000] BIOS-e820: [mem 0x000000000080b000-0x000000000080bfff] ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x000000000080c000-0x000000000080ffff] usable
+[    0.000000] BIOS-e820: [mem 0x0000000000810000-0x00000000008fffff] ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x0000000000900000-0x000000007eedffff] usable
+[    0.000000] BIOS-e820: [mem 0x000000007eee0000-0x000000007efa0fff] reserved
+[    0.000000] BIOS-e820: [mem 0x000000007efa1000-0x000000007f8eefff] usable
+[    0.000000] BIOS-e820: [mem 0x000000007f8ef000-0x000000007fb6efff] reserved
+[    0.000000] BIOS-e820: [mem 0x000000007fb6f000-0x000000007fb7efff] ACPI data
+[    0.000000] BIOS-e820: [mem 0x000000007fb7f000-0x000000007fbfefff] ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x000000007fbff000-0x000000007ff4ffff] usable
+[    0.000000] BIOS-e820: [mem 0x000000007ff50000-0x000000007ff6ffff] reserved
+[    0.000000] BIOS-e820: [mem 0x000000007ff70000-0x000000007fffffff] ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x00000000b0000000-0x00000000bfffffff] reserved
+[    0.000000] NX (Execute Disable) protection: active
+[    0.000000] extended physical RAM map:
+[    0.000000] reserve setup_data: [mem 0x0000000000000000-0x000000000009ffff] usable
+[    0.000000] reserve setup_data: [mem 0x0000000000100000-0x00000000007fffff] usable
+[    0.000000] reserve setup_data: [mem 0x0000000000800000-0x0000000000807fff] ACPI NVS
+[    0.000000] reserve setup_data: [mem 0x0000000000808000-0x000000000080afff] usable
+[    0.000000] reserve setup_data: [mem 0x000000000080b000-0x000000000080bfff] ACPI NVS
+[    0.000000] reserve setup_data: [mem 0x000000000080c000-0x000000000080ffff] usable
+[    0.000000] reserve setup_data: [mem 0x0000000000810000-0x00000000008fffff] ACPI NVS
+[    0.000000] reserve setup_data: [mem 0x0000000000900000-0x000000007db8f017] usable
+[    0.000000] reserve setup_data: [mem 0x000000007db8f018-0x000000007dbc1457] usable
+[    0.000000] reserve setup_data: [mem 0x000000007dbc1458-0x000000007dbc2017] usable
+[    0.000000] reserve setup_data: [mem 0x000000007dbc2018-0x000000007dbcba57] usable
+[    0.000000] reserve setup_data: [mem 0x000000007dbcba58-0x000000007eedffff] usable
+[    0.000000] reserve setup_data: [mem 0x000000007eee0000-0x000000007efa0fff] reserved
+[    0.000000] reserve setup_data: [mem 0x000000007efa1000-0x000000007f8eefff] usable
+[    0.000000] reserve setup_data: [mem 0x000000007f8ef000-0x000000007fb6efff] reserved
+[    0.000000] reserve setup_data: [mem 0x000000007fb6f000-0x000000007fb7efff] ACPI data
+[    0.000000] reserve setup_data: [mem 0x000000007fb7f000-0x000000007fbfefff] ACPI NVS
+[    0.000000] reserve setup_data: [mem 0x000000007fbff000-0x000000007ff4ffff] usable
+[    0.000000] reserve setup_data: [mem 0x000000007ff50000-0x000000007ff6ffff] reserved
+[    0.000000] reserve setup_data: [mem 0x000000007ff70000-0x000000007fffffff] ACPI NVS
+[    0.000000] reserve setup_data: [mem 0x00000000b0000000-0x00000000bfffffff] reserved
+[    0.000000] efi: EFI v2.70 by EDK II
+[    0.000000] efi: SMBIOS=0x7f91a000 ACPI=0x7fb7e000 ACPI 2.0=0x7fb7e014 MEMATTR=0x7dbd7118 RNG=0x7fb73018 
+[    0.000000] SMBIOS 2.8 present.
+[    0.000000] DMI: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
+[    0.000000] Hypervisor detected: KVM
+[    0.000000] kvm-clock: Using msrs 4b564d01 and 4b564d00
+[    0.000000] kvm-clock: cpu 0, msr 592e1001, primary cpu clock
+[    0.000000] kvm-clock: using sched offset of 2859971183 cycles
+[    0.000002] clocksource: kvm-clock: mask: 0xffffffffffffffff max_cycles: 0x1cd42e4dffb, max_idle_ns: 881590591483 ns
+[    0.000005] tsc: Detected 1796.590 MHz processor
+[    0.000146] last_pfn = 0x7ff50 max_arch_pfn = 0x400000000
+[    0.000198] x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT  
+[    0.004537] Secure boot disabled
+[    0.004538] RAMDISK: [mem 0x5bbe2000-0x6a150fff]
+[    0.004540] ACPI: Early table checksum verification disabled
+[    0.004543] ACPI: RSDP 0x000000007FB7E014 000024 (v02 BOCHS )
+[    0.004546] ACPI: XSDT 0x000000007FB7D0E8 000054 (v01 BOCHS  BXPC     00000001      01000013)
+[    0.004551] ACPI: FACP 0x000000007FB79000 0000F4 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.004555] ACPI: DSDT 0x000000007FB7A000 0020D6 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.004558] ACPI: FACS 0x000000007FBDD000 000040
+[    0.004561] ACPI: APIC 0x000000007FB78000 000080 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.004564] ACPI: HPET 0x000000007FB77000 000038 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.004567] ACPI: MCFG 0x000000007FB76000 00003C (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.004569] ACPI: WAET 0x000000007FB75000 000028 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.004572] ACPI: BGRT 0x000000007FB74000 000038 (v01 INTEL  EDK2     00000002      01000013)
+[    0.004575] ACPI: Reserving FACP table memory at [mem 0x7fb79000-0x7fb790f3]
+[    0.004576] ACPI: Reserving DSDT table memory at [mem 0x7fb7a000-0x7fb7c0d5]
+[    0.004577] ACPI: Reserving FACS table memory at [mem 0x7fbdd000-0x7fbdd03f]
+[    0.004578] ACPI: Reserving APIC table memory at [mem 0x7fb78000-0x7fb7807f]
+[    0.004579] ACPI: Reserving HPET table memory at [mem 0x7fb77000-0x7fb77037]
+[    0.004580] ACPI: Reserving MCFG table memory at [mem 0x7fb76000-0x7fb7603b]
+[    0.004581] ACPI: Reserving WAET table memory at [mem 0x7fb75000-0x7fb75027]
+[    0.004582] ACPI: Reserving BGRT table memory at [mem 0x7fb74000-0x7fb74037]
+[    0.004622] Zone ranges:
+[    0.004623]   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
+[    0.004624]   DMA32    [mem 0x0000000001000000-0x000000007ff4ffff]
+[    0.004626]   Normal   empty
+[    0.004627]   Device   empty
+[    0.004628] Movable zone start for each node
+[    0.004629] Early memory node ranges
+[    0.004630]   node   0: [mem 0x0000000000001000-0x000000000009ffff]
+[    0.004631]   node   0: [mem 0x0000000000100000-0x00000000007fffff]
+[    0.004632]   node   0: [mem 0x0000000000808000-0x000000000080afff]
+[    0.004633]   node   0: [mem 0x000000000080c000-0x000000000080ffff]
+[    0.004634]   node   0: [mem 0x0000000000900000-0x000000007eedffff]
+[    0.004635]   node   0: [mem 0x000000007efa1000-0x000000007f8eefff]
+[    0.004636]   node   0: [mem 0x000000007fbff000-0x000000007ff4ffff]
+[    0.004638] Initmem setup node 0 [mem 0x0000000000001000-0x000000007ff4ffff]
+[    0.004646] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.004657] On node 0, zone DMA: 96 pages in unavailable ranges
+[    0.004658] On node 0, zone DMA: 8 pages in unavailable ranges
+[    0.004659] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.004673] On node 0, zone DMA: 240 pages in unavailable ranges
+[    0.008355] On node 0, zone DMA32: 193 pages in unavailable ranges
+[    0.008373] On node 0, zone DMA32: 784 pages in unavailable ranges
+[    0.008376] On node 0, zone DMA32: 176 pages in unavailable ranges
+[    0.008762] ACPI: PM-Timer IO Port: 0x608
+[    0.008772] ACPI: LAPIC_NMI (acpi_id[0xff] dfl dfl lint[0x1])
+[    0.008806] IOAPIC[0]: apic_id 0, version 17, address 0xfec00000, GSI 0-23
+[    0.008808] ACPI: INT_SRC_OVR (bus 0 bus_irq 0 global_irq 2 dfl dfl)
+[    0.008810] ACPI: INT_SRC_OVR (bus 0 bus_irq 5 global_irq 5 high level)
+[    0.008811] ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)
+[    0.008812] ACPI: INT_SRC_OVR (bus 0 bus_irq 10 global_irq 10 high level)
+[    0.008813] ACPI: INT_SRC_OVR (bus 0 bus_irq 11 global_irq 11 high level)
+[    0.008819] Using ACPI (MADT) for SMP configuration information
+[    0.008821] ACPI: HPET id: 0x8086a201 base: 0xfed00000
+[    0.008827] smpboot: Allowing 2 CPUs, 0 hotplug CPUs
+[    0.008850] [mem 0xc0000000-0xffffffff] available for PCI devices
+[    0.008853] Booting paravirtualized kernel on KVM
+[    0.008855] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1910969940391419 ns
+[    0.016472] setup_percpu: NR_CPUS:128 nr_cpumask_bits:128 nr_cpu_ids:2 nr_node_ids:1
+[    0.016711] percpu: Embedded 58 pages/cpu s198680 r8192 d30696 u1048576
+[    0.016737] kvm-guest: stealtime: cpu 0, msr 7d81bec0
+[    0.016740] kvm-guest: PV spinlocks disabled, no host support
+[    0.016743] Built 1 zonelists, mobility grouping on.  Total pages: 512789
+[    0.016744] Kernel command line: tink_worker_image=127.0.0.1/embedded/tink-worker tinkerbell_tls=false console=ttyS0 initrd=initrd
+[    0.016949] Dentry cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.017048] Inode-cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.017067] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.022094] Memory: 1504520K/2091156K available (18445K kernel code, 2434K rwdata, 5048K rodata, 2148K init, 1252K bss, 586376K reserved, 0K cma-reserved)
+[    0.022169] ftrace: allocating 63585 entries in 249 pages
+[    0.044658] ftrace: allocated 249 pages with 6 groups
+[    0.044963] rcu: Hierarchical RCU implementation.
+[    0.044964] rcu:     RCU restricting CPUs from NR_CPUS=128 to nr_cpu_ids=2.
+[    0.044965]  Rude variant of Tasks RCU enabled.
+[    0.044966]  Tracing variant of Tasks RCU enabled.
+[    0.044967] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.044968] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.049285] NR_IRQS: 8448, nr_irqs: 440, preallocated irqs: 16
+[    0.049593] Console: colour dummy device 80x25
+[    0.193882] printk: console [ttyS0] enabled
+[    0.194542] ACPI: Core revision 20200925
+[    0.195355] clocksource: hpet: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604467 ns
+[    0.196890] APIC: Switch to symmetric I/O mode setup
+[    0.197894] x2apic enabled
+[    0.198630] Switched APIC routing to physical x2apic.
+[    0.200317] ..TIMER: vector=0x30 apic1=0 pin1=2 apic2=-1 pin2=-1
+[    0.201354] tsc: Marking TSC unstable due to TSCs unsynchronized
+[    0.202389] Calibrating delay loop (skipped) preset value.. 3593.18 BogoMIPS (lpj=1796590)
+[    0.203446] process: using AMD E400 aware idle routine
+[    0.204388] Last level iTLB entries: 4KB 512, 2MB 255, 4MB 127
+[    0.205386] Last level dTLB entries: 4KB 512, 2MB 255, 4MB 127, 1GB 0
+[    0.206390] Spectre V1 : Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+[    0.207387] Spectre V2 : Mitigation: Retpolines
+[    0.208386] Spectre V2 : Spectre v2 / SpectreRSB mitigation: Filling RSB on context switch
+[    0.209386] Spectre V2 : Spectre v2 / SpectreRSB : Filling RSB on VMEXIT
+[    0.210390] x86/fpu: x87 FPU will use FXSAVE
+[    0.225136] Freeing SMP alternatives memory: 24K
+[    0.225727] pid_max: default: 32768 minimum: 301
+[    0.232689] LSM: Security Framework initializing
+[    0.233390] Yama: becoming mindful.
+[    0.233977] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.234389] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.338096] smpboot: CPU0: AMD QEMU Virtual CPU version 2.5+ (family: 0xf, model: 0x6b, stepping: 0x1)
+[    0.338527] Performance Events: AMD PMU driver.
+[    0.339388] ... version:                0
+[    0.340386] ... bit width:              48
+[    0.341049] ... generic registers:      4
+[    0.341386] ... value mask:             0000ffffffffffff
+[    0.342386] ... max period:             00007fffffffffff
+[    0.343216] ... fixed-purpose events:   0
+[    0.343386] ... event mask:             000000000000000f
+[    0.344499] rcu: Hierarchical SRCU implementation.
+[    0.345652] smp: Bringing up secondary CPUs ...
+[    0.346491] x86: Booting SMP configuration:
+[    0.347388] .... node  #0, CPUs:      #1
+[    0.149956] kvm-clock: cpu 1, msr 592e1041, secondary cpu clock
+[    0.349061] kvm-guest: stealtime: cpu 1, msr 7d91bec0
+[    0.352452] smp: Brought up 1 node, 2 CPUs
+[    0.353388] smpboot: Max logical packages: 1
+[    0.354387] smpboot: Total of 2 processors activated (7186.36 BogoMIPS)
+[    0.356402] devtmpfs: initialized
+[    0.357479] x86/mm: Memory block size: 128MB
+[    0.359567] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.360390] futex hash table entries: 512 (order: 3, 32768 bytes, linear)
+[    0.361431] pinctrl core: initialized pinctrl subsystem
+[    0.362603] NET: Registered protocol family 16
+[    0.363481] audit: initializing netlink subsys (disabled)
+[    0.364419] audit: type=2000 audit(1725072860.121:1): state=initialized audit_enabled=0 res=1
+[    0.364477] thermal_sys: Registered thermal governor 'step_wise'
+[    0.366397] cpuidle: using governor ladder
+[    0.367393] cpuidle: using governor menu
+[    0.368521] ACPI: bus type PCI registered
+[    0.369144] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.370474] PCI: MMCONFIG for domain 0000 [bus 00-ff] at [mem 0xb0000000-0xbfffffff] (base 0xb0000000)
+[    0.371389] PCI: MMCONFIG at [mem 0xb0000000-0xbfffffff] reserved in E820
+[    0.372402] PCI: Using configuration type 1 for base access
+[    0.375615] Kprobes globally optimized
+[    0.376402] HugeTLB registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.378410] cryptd: max_cpu_qlen set to 1000
+[    0.398387] raid6: sse2x4   gen() 15867 MB/s
+[    0.415388] raid6: sse2x4   xor()  8510 MB/s
+[    0.432388] raid6: sse2x2   gen() 16688 MB/s
+[    0.449388] raid6: sse2x2   xor() 11300 MB/s
+[    0.466388] raid6: sse2x1   gen() 12789 MB/s
+[    0.483388] raid6: sse2x1   xor()  7836 MB/s
+[    0.484057] raid6: using algorithm sse2x2 gen() 16688 MB/s
+[    0.484386] raid6: .... xor() 11300 MB/s, rmw enabled
+[    0.485387] raid6: using intx1 recovery algorithm
+[    0.486429] ACPI: Added _OSI(Module Device)
+[    0.487079] ACPI: Added _OSI(Processor Device)
+[    0.487387] ACPI: Added _OSI(3.0 _SCP Extensions)
+[    0.488386] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.489201] ACPI: Added _OSI(Linux-Dell-Video)
+[    0.489392] ACPI: Added _OSI(Linux-Lenovo-NV-HDMI-Audio)
+[    0.490392] ACPI: Added _OSI(Linux-HPI-Hybrid-Graphics)
+[    0.492629] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.493936] ACPI: Interpreter enabled
+[    0.494390] ACPI: (supports S0 S5)
+[    0.494910] ACPI: Using IOAPIC for interrupt routing
+[    0.495405] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.496467] ACPI: Enabled 2 GPEs in block 00 to 3F
+[    0.498647] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.499391] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
+[    0.500445] acpi PNP0A08:00: _OSC: platform does not support [PCIeHotplug LTR]
+[    0.501430] acpi PNP0A08:00: _OSC: OS now controls [SHPCHotplug PME PCIeCapability]
+[    0.503487] PCI host bridge to bus 0000:00
+[    0.504112] pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7 window]
+[    0.504387] pci_bus 0000:00: root bus resource [io  0x0d00-0xffff window]
+[    0.505387] pci_bus 0000:00: root bus resource [mem 0x000a0000-0x000bffff window]
+[    0.506387] pci_bus 0000:00: root bus resource [mem 0x80000000-0xafffffff window]
+[    0.507387] pci_bus 0000:00: root bus resource [mem 0xc0000000-0xfebfffff window]
+[    0.508387] pci_bus 0000:00: root bus resource [mem 0x800000000-0xfffffffff window]
+[    0.509387] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.510439] pci 0000:00:00.0: [8086:29c0] type 00 class 0x060000
+[    0.511850] pci 0000:00:01.0: [1234:1111] type 00 class 0x030000
+[    0.513782] pci 0000:00:01.0: reg 0x10: [mem 0xc0000000-0xc0ffffff pref]
+[    0.516748] pci 0000:00:01.0: reg 0x18: [mem 0xc1082000-0xc1082fff]
+[    0.520745] pci 0000:00:01.0: reg 0x30: [mem 0xffff0000-0xffffffff pref]
+[    0.521430] pci 0000:00:01.0: BAR 0: assigned to efifb
+[    0.522679] pci 0000:00:02.0: [1af4:1005] type 00 class 0x00ff00
+[    0.523864] pci 0000:00:02.0: reg 0x10: [io  0x6080-0x609f]
+[    0.526391] pci 0000:00:02.0: reg 0x20: [mem 0x800000000-0x800003fff 64bit pref]
+[    0.528881] pci 0000:00:03.0: [1af4:1000] type 00 class 0x020000
+[    0.530388] pci 0000:00:03.0: reg 0x10: [io  0x6060-0x607f]
+[    0.532217] pci 0000:00:03.0: reg 0x14: [mem 0xc1081000-0xc1081fff]
+[    0.535668] pci 0000:00:03.0: reg 0x20: [mem 0x800004000-0x800007fff 64bit pref]
+[    0.536893] pci 0000:00:03.0: reg 0x30: [mem 0xfff80000-0xffffffff pref]
+[    0.539230] pci 0000:00:1f.0: [8086:2918] type 00 class 0x060100
+[    0.540661] pci 0000:00:1f.0: quirk: [io  0x0600-0x067f] claimed by ICH6 ACPI/GPIO/TCO
+[    0.541629] pci 0000:00:1f.2: [8086:2922] type 00 class 0x010601
+[    0.545743] pci 0000:00:1f.2: reg 0x20: [io  0x6040-0x605f]
+[    0.546751] pci 0000:00:1f.2: reg 0x24: [mem 0xc1080000-0xc1080fff]
+[    0.548786] pci 0000:00:1f.3: [8086:2930] type 00 class 0x0c0500
+[    0.550780] pci 0000:00:1f.3: reg 0x20: [io  0x6000-0x603f]
+[    0.552539] ACPI: PCI Interrupt Link [LNKA] (IRQs 5 *10 11)
+[    0.553452] ACPI: PCI Interrupt Link [LNKB] (IRQs 5 *10 11)
+[    0.554397] ACPI: PCI Interrupt Link [LNKC] (IRQs 5 10 *11)
+[    0.555315] ACPI: PCI Interrupt Link [LNKD] (IRQs 5 10 *11)
+[    0.555452] ACPI: PCI Interrupt Link [LNKE] (IRQs 5 *10 11)
+[    0.556449] ACPI: PCI Interrupt Link [LNKF] (IRQs 5 *10 11)
+[    0.557446] ACPI: PCI Interrupt Link [LNKG] (IRQs 5 10 *11)
+[    0.558449] ACPI: PCI Interrupt Link [LNKH] (IRQs 5 10 *11)
+[    0.559413] ACPI: PCI Interrupt Link [GSIA] (IRQs *16)
+[    0.560207] ACPI: PCI Interrupt Link [GSIB] (IRQs *17)
+[    0.560392] ACPI: PCI Interrupt Link [GSIC] (IRQs *18)
+[    0.561392] ACPI: PCI Interrupt Link [GSID] (IRQs *19)
+[    0.562393] ACPI: PCI Interrupt Link [GSIE] (IRQs *20)
+[    0.563397] ACPI: PCI Interrupt Link [GSIF] (IRQs *21)
+[    0.564203] ACPI: PCI Interrupt Link [GSIG] (IRQs *22)
+[    0.564392] ACPI: PCI Interrupt Link [GSIH] (IRQs *23)
+[    0.565561] iommu: Default domain type: Translated 
+[    0.567602] SCSI subsystem initialized
+[    0.568413] ACPI: bus type USB registered
+[    0.569436] usbcore: registered new interface driver usbfs
+[    0.570392] usbcore: registered new interface driver hub
+[    0.571393] usbcore: registered new device driver usb
+[    0.572401] pps_core: LinuxPPS API ver. 1 registered
+[    0.573386] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.574390] PTP clock support registered
+[    0.575478] Registered efivars operations
+[    0.577465] NetLabel: Initializing
+[    0.577997] NetLabel:  domain hash size = 128
+[    0.578386] NetLabel:  protocols = UNLABELED CIPSOv4 CALIPSO
+[    0.579399] NetLabel:  unlabeled traffic allowed by default
+[    0.580387] PCI: Using ACPI for IRQ routing
+[    0.646789] hpet: 3 channels of 0 reserved for per-cpu timers
+[    0.647397] hpet0: at MMIO 0xfed00000, IRQs 2, 8, 0
+[    0.648387] hpet0: 3 comparators, 64-bit 100.000000 MHz counter
+[    0.651444] clocksource: Switched to clocksource kvm-clock
+[    0.677160] VFS: Disk quotas dquot_6.6.0
+[    0.677805] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.678893] FS-Cache: Loaded
+[    0.679508] CacheFiles: Loaded
+[    0.680003] pnp: PnP ACPI init
+[    0.680598] system 00:05: [mem 0xb0000000-0xbfffffff window] has been reserved
+[    0.681884] pnp: PnP ACPI: found 6 devices
+[    0.690265] clocksource: acpi_pm: mask: 0xffffff max_cycles: 0xffffff, max_idle_ns: 2085701024 ns
+[    0.691667] NET: Registered protocol family 2
+[    0.692378] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.693759] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.695289] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.696516] TCP bind hash table entries: 16384 (order: 6, 262144 bytes, linear)
+[    0.697658] TCP: Hash tables configured (established 16384 bind 16384)
+[    0.698696] UDP hash table entries: 1024 (order: 3, 32768 bytes, linear)
+[    0.699720] UDP-Lite hash table entries: 1024 (order: 3, 32768 bytes, linear)
+[    0.700848] NET: Registered protocol family 1
+[    0.701526] NET: Registered protocol family 44
+[    0.702237] pci 0000:00:01.0: can't claim BAR 6 [mem 0xffff0000-0xffffffff pref]: no compatible bridge window
+[    0.703737] pci 0000:00:03.0: can't claim BAR 6 [mem 0xfff80000-0xffffffff pref]: no compatible bridge window
+[    0.705238] pci 0000:00:03.0: BAR 6: assigned [mem 0x80000000-0x8007ffff pref]
+[    0.706360] pci 0000:00:01.0: BAR 6: assigned [mem 0x80080000-0x8008ffff pref]
+[    0.707469] pci_bus 0000:00: resource 4 [io  0x0000-0x0cf7 window]
+[    0.708413] pci_bus 0000:00: resource 5 [io  0x0d00-0xffff window]
+[    0.709345] pci_bus 0000:00: resource 6 [mem 0x000a0000-0x000bffff window]
+[    0.710396] pci_bus 0000:00: resource 7 [mem 0x80000000-0xafffffff window]
+[    0.711444] pci_bus 0000:00: resource 8 [mem 0xc0000000-0xfebfffff window]
+[    0.712491] pci_bus 0000:00: resource 9 [mem 0x800000000-0xfffffffff window]
+[    0.713627] pci 0000:00:01.0: Video device with shadowed ROM at [mem 0x000c0000-0x000dffff]
+[    0.714957] PCI: CLS 0 bytes, default 64
+[    0.715610] Trying to unpack rootfs image as initramfs...
+[    3.049124] Freeing initrd memory: 234940K
+[    3.050465] CPU feature 'AVX registers' is not supported.
+[    3.051582] CPU feature 'AVX registers' is not supported.
+[    3.052413] AVX2 instructions are not detected.
+[    3.053409] AVX or AES-NI instructions are not detected.
+[    3.054229] AVX2 or AES-NI instructions are not detected.
+[    3.055217] CPU feature 'AVX registers' is not supported.
+[    3.056044] CPU feature 'AVX registers' is not supported.
+[    3.056860] PCLMULQDQ-NI instructions are not detected.
+[    3.058089] workingset: timestamp_bits=46 max_order=19 bucket_order=0
+[    3.059215] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    3.060270] FS-Cache: Netfs 'cifs' registered for caching
+[    3.061170] Key type cifs.idmap registered
+[    3.062433] fuse: init (API version 7.32)
+[    3.063868] SGI XFS with ACLs, security attributes, quota, no debug enabled
+[    3.067183] 9p: Installing v9fs 9p2000 file system support
+[    3.068036] FS-Cache: Netfs '9p' registered for caching
+[    3.071476] NET: Registered protocol family 38
+[    3.072838] xor: measuring software checksum speed
+[    3.075453]    prefetch64-sse  :  8925 MB/sec
+[    3.078425]    generic_sse     :  8240 MB/sec
+[    3.079925] xor: using function: prefetch64-sse (8925 MB/sec)
+[    3.082176] async_tx: api initialized (async)
+[    3.083921] Key type asymmetric registered
+[    3.085280] Asymmetric key parser 'x509' registered
+[    3.087003] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 247)
+[    3.089294] io scheduler mq-deadline registered
+[    3.090032] io scheduler kyber registered
+[    3.091356] io scheduler bfq registered
+[    3.092141] shpchp: Standard Hot Plug PCI Controller Driver version: 0.4
+[    3.093220] hv_vmbus: registering driver hyperv_fb
+[    3.093990] efifb: probing for efifb
+[    3.094584] efifb: framebuffer at 0xc0000000, using 3072k, total 3072k
+[    3.095608] efifb: mode is 1024x768x32, linelength=4096, pages=1
+[    3.096559] efifb: scrolling: redraw
+[    3.097133] efifb: Truecolor: size=8:8:8:8, shift=24:16:8:0
+[    3.100653] Console: switching to colour frame buffer device 128x48
+[    3.102955] fb0: EFI VGA frame buffer device
+[    3.103745] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input0
+[    3.104943] ACPI: Power Button [PWRF]
+[    3.106418] PCI Interrupt Link [GSIG] enabled at IRQ 22
+[    3.110267] PCI Interrupt Link [GSIH] enabled at IRQ 23
+[    3.114007] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[    3.116470] 00:03: ttyS0 at I/O 0x3f8 (irq = 4, base_baud = 115200) is a 16550A
+[    3.120316] Non-volatile memory driver v1.3
+[    3.122747] Hangcheck: starting hangcheck timer 0.9.1 (tick is 180 seconds, margin is 60 seconds).
+[    3.122953] random: crng init done
+[    3.125803] ACPI: bus type drm_connector registered
+[    3.130406] brd: module loaded
+[    3.133111] loop: module loaded
+[    3.138911] the cryptoloop driver has been deprecated and will be removed in in Linux 5.16
+[    3.141819] lpc_ich 0000:00:1f.0: I/O space for GPIO uninitialized
+[    3.144508] VMware PVSCSI driver - version 1.0.7.0-k
+[    3.146613] hv_vmbus: registering driver hv_storvsc
+[    3.150103] PCI Interrupt Link [GSIA] enabled at IRQ 16
+[    3.153242] ahci 0000:00:1f.2: AHCI 0001.0000 32 slots 6 ports 1.5 Gbps 0x3f impl SATA mode
+[    3.156041] ahci 0000:00:1f.2: flags: 64bit ncq only 
+[    3.159855] scsi host0: ahci
+[    3.161829] scsi host1: ahci
+[    3.163429] scsi host2: ahci
+[    3.165151] scsi host3: ahci
+[    3.166539] scsi host4: ahci
+[    3.168267] scsi host5: ahci
+[    3.169471] ata1: SATA max UDMA/133 abar m4096@0xc1080000 port 0xc1080100 irq 24
+[    3.172251] ata2: SATA max UDMA/133 abar m4096@0xc1080000 port 0xc1080180 irq 24
+[    3.175001] ata3: SATA max UDMA/133 abar m4096@0xc1080000 port 0xc1080200 irq 24
+[    3.177728] ata4: SATA max UDMA/133 abar m4096@0xc1080000 port 0xc1080280 irq 24
+[    3.180483] ata5: SATA max UDMA/133 abar m4096@0xc1080000 port 0xc1080300 irq 24
+[    3.183237] ata6: SATA max UDMA/133 abar m4096@0xc1080000 port 0xc1080380 irq 24
+[    3.186628] tun: Universal TUN/TAP device driver, 1.6
+[    3.191543] e1000: Intel(R) PRO/1000 Network Driver
+[    3.193923] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[    3.196746] e1000e: Intel(R) PRO/1000 Network Driver
+[    3.198889] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[    3.201276] igb: Intel(R) Gigabit Ethernet Network Driver
+[    3.203551] igb: Copyright (c) 2007-2014 Intel Corporation.
+[    3.205809] Intel(R) 2.5G Ethernet Linux Driver
+[    3.207780] Copyright(c) 2018 Intel Corporation.
+[    3.209671] igbvf: Intel(R) Gigabit Virtual Function Network Driver
+[    3.212255] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[    3.214677] ixgbe: Intel(R) 10 Gigabit PCI Express Network Driver
+[    3.217167] ixgbe: Copyright (c) 1999-2016 Intel Corporation.
+[    3.219920] ixgbevf: Intel(R) 10 Gigabit PCI Express Virtual Function Network Driver
+[    3.222785] ixgbevf: Copyright (c) 2009 - 2018 Intel Corporation.
+[    3.225129] i40e: Intel(R) Ethernet Connection XL710 Network Driver
+[    3.228030] i40e: Copyright (c) 2013 - 2019 Intel Corporation.
+[    3.230423] ixgb: Intel(R) PRO/10GbE Network Driver
+[    3.232413] ixgb: Copyright (c) 1999-2008 Intel Corporation.
+[    3.234813] iavf: Intel(R) Ethernet Adaptive Virtual Function Network Driver
+[    3.237928] Copyright (c) 2013 - 2018 Intel Corporation.
+[    3.240786] ice: Intel(R) Ethernet Connection E800 Series Linux Driver
+[    3.243484] ice: Copyright (c) 2018, Intel Corporation.
+[    3.245645] VMware vmxnet3 virtual NIC driver - version 1.5.0.0-k-NAPI
+[    3.248360] usbcore: registered new interface driver rtl8150
+[    3.250632] usbcore: registered new interface driver r8152
+[    3.252918] usbcore: registered new interface driver cdc_ether
+[    3.255257] hv_vmbus: registering driver hv_netvsc
+[    3.257179] Fusion MPT base driver 3.04.20
+[    3.258941] Copyright (c) 1999-2008 LSI Corporation
+[    3.260891] Fusion MPT SPI Host driver 3.04.20
+[    3.262839] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    3.265423] ehci-pci: EHCI PCI platform driver
+[    3.267229] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+[    3.269771] ohci-pci: OHCI PCI platform driver
+[    3.271581] uhci_hcd: USB Universal Host Controller Interface driver
+[    3.274273] usbcore: registered new interface driver usbserial_generic
+[    3.276873] usbserial: USB Serial support registered for generic
+[    3.279355] usbcore: registered new interface driver ch341
+[    3.281551] usbserial: USB Serial support registered for ch341-uart
+[    3.284114] usbcore: registered new interface driver cp210x
+[    3.286351] usbserial: USB Serial support registered for cp210x
+[    3.288774] usbcore: registered new interface driver ftdi_sio
+[    3.291075] usbserial: USB Serial support registered for FTDI USB Serial Device
+[    3.294028] usbcore: registered new interface driver option
+[    3.296286] usbserial: USB Serial support registered for GSM modem (1-port)
+[    3.299034] usbcore: registered new interface driver pl2303
+[    3.300916] usbserial: USB Serial support registered for pl2303
+[    3.302826] usbcore: registered new interface driver ti_usb_3410_5052
+[    3.303832] usbserial: USB Serial support registered for TI USB 3410 1 port adapter
+[    3.305008] usbserial: USB Serial support registered for TI USB 5052 2 port adapter
+[    3.306208] i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+[    3.308228] serio: i8042 KBD port at 0x60,0x64 irq 1
+[    3.309017] serio: i8042 AUX port at 0x60,0x64 irq 12
+[    3.309844] hv_vmbus: registering driver hyperv_keyboard
+[    3.310847] mousedev: PS/2 mouse device common for all mice
+[    3.312041] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input1
+[    3.313475] input: PC Speaker as /devices/platform/pcspkr/input/input2
+[    3.314756] rtc_cmos 00:04: RTC can wake from S4
+[    3.316032] rtc_cmos 00:04: registered as rtc0
+[    3.316838] rtc_cmos 00:04: setting system clock to 2024-08-31T02:54:23 UTC (1725072863)
+[    3.318153] rtc_cmos 00:04: alarms up to one day, y3k, 242 bytes nvram, hpet irqs
+[    3.319296] i2c /dev entries driver
+[    3.320091] device-mapper: ioctl: 4.43.0-ioctl (2020-10-01) initialised: dm-devel@redhat.com
+[    3.323174] sdhci: Secure Digital Host Controller Interface driver
+[    3.325043] sdhci: Copyright(c) Pierre Ossman
+[    3.325739] sdhci-pltfm: SDHCI platform and OF driver helper
+[    3.326657] EFI Variables Facility v0.08 2004-May-17
+[    3.328592] pstore: Registered efi as persistent store backend
+[    3.329526] usbcore: registered new interface driver usbhid
+[    3.330404] usbhid: USB HID core driver
+[    3.331013] hv_utils: Registering HyperV Utility Driver
+[    3.331956] hv_vmbus: registering driver hv_utils
+[    3.332700] hv_vmbus: registering driver hv_balloon
+[    3.333471] GACT probability on
+[    3.333971] Mirror/redirect action on
+[    3.334551] Simple TC action Loaded
+[    3.335096] u32 classifier
+[    3.335517]     Performance counters on
+[    3.336121]     input device check on
+[    3.336679]     Actions configured
+[    3.337348] xt_time: kernel timezone is -0000
+[    3.338037] IPVS: Registered protocols (TCP, UDP, SCTP, AH, ESP)
+[    3.338984] IPVS: Connection hash table configured (size=4096, memory=32Kbytes)
+[    3.340131] IPVS: ipvs loaded.
+[    3.340600] IPVS: [rr] scheduler registered.
+[    3.341268] IPVS: [wrr] scheduler registered.
+[    3.341941] IPVS: [lc] scheduler registered.
+[    3.342650] IPVS: [wlc] scheduler registered.
+[    3.343325] IPVS: [fo] scheduler registered.
+[    3.343993] IPVS: [ovf] scheduler registered.
+[    3.344658] IPVS: [lblc] scheduler registered.
+[    3.345344] IPVS: [lblcr] scheduler registered.
+[    3.346043] IPVS: [dh] scheduler registered.
+[    3.346717] IPVS: [sh] scheduler registered.
+[    3.347436] IPVS: [mh] scheduler registered.
+[    3.348128] IPVS: [sed] scheduler registered.
+[    3.348793] IPVS: [nq] scheduler registered.
+[    3.349459] IPVS: ftp: loaded support on port[0] = 21
+[    3.350278] ipip: IPv4 and MPLS over IPv4 tunneling driver
+[    3.351215] gre: GRE over IPv4 demultiplexor driver
+[    3.352157] ipt_CLUSTERIP: ClusterIP Version 0.8 loaded successfully
+[    3.353196] NET: Registered protocol family 10
+[    3.354203] Segment Routing with IPv6
+[    3.355872] NET: Registered protocol family 17
+[    3.357720] Bridge firewalling registered
+[    3.359184] 8021q: 802.1Q VLAN Support v1.8
+[    3.360603] 9pnet: Installing 9P2000 support
+[    3.362064] Key type dns_resolver registered
+[    3.363801] oprofile: using NMI interrupt.
+[    3.365107] IPI shorthand broadcast: enabled
+[    3.367051] registered taskstats version 1
+[    3.368940] Key type .fscrypt registered
+[    3.369563] Key type fscrypt-provisioning registered
+[    3.370388] pstore: Using crash dump compression: deflate
+[    3.373549] Key type encrypted registered
+[    3.374836] ima: No TPM chip found, activating TPM-bypass!
+[    3.376541] ima: Allocated hash algorithm: sha256
+[    3.378478] ima: No architecture policies found
+[    3.380174] evm: Initialising EVM extended attributes:
+[    3.382140] evm: security.ima
+[    3.383385] evm: security.capability
+[    3.384560] evm: HMAC attrs: 0x1
+[    3.386270] printk: console [netcon0] enabled
+[    3.387781] netconsole: network logging started
+[    3.389508] powernow_k8: Power state transitions not supported
+[    3.390596] powernow_k8: Power state transitions not supported
+[    3.392538] Unstable clock detected, switching default tracing clock to "global"
+[    3.392538] If you want to keep using the local clock, then add:
+[    3.392538]   "trace_clock=local"
+[    3.392538] on the kernel command line
+[    3.400048] clk: Disabling unused clocks
+[    3.493738] ata1: SATA link up 1.5 Gbps (SStatus 113 SControl 300)
+[    3.495210] ata3: SATA link up 1.5 Gbps (SStatus 113 SControl 300)
+[    3.496216] ata1.00: ATA-7: QEMU HARDDISK, 2.5+, max UDMA/100
+[    3.497142] ata1.00: 20971520 sectors, multi 16: LBA48 NCQ (depth 32)
+[    3.498139] ata1.00: applying bridge limits
+[    3.498795] ata3.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
+[    3.499706] ata3.00: applying bridge limits
+[    3.500571] ata1.00: configured for UDMA/100
+[    3.501383] scsi 0:0:0:0: Direct-Access     ATA      QEMU HARDDISK    2.5+ PQ: 0 ANSI: 5
+[    3.501540] ata2: SATA link down (SStatus 0 SControl 300)
+[    3.502807] sd 0:0:0:0: [sda] 20971520 512-byte logical blocks: (10.7 GB/10.0 GiB)
+[    3.504664] ata5: SATA link down (SStatus 0 SControl 300)
+[    3.507229] sd 0:0:0:0: Attached scsi generic sg0 type 0
+[    3.507337] ata6: SATA link down (SStatus 0 SControl 300)
+[    3.509720] ata3.00: configured for UDMA/100
+[    3.511306] ata4: SATA link down (SStatus 0 SControl 300)
+[    3.512186] sd 0:0:0:0: [sda] Write Protect is off
+[    3.512669] scsi 2:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
+[    3.513047] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    3.517782] sd 0:0:0:0: [sda] Attached SCSI disk
+[    3.533794] sr 2:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    3.536522] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    3.556282] sr 2:0:0:0: Attached scsi generic sg1 type 5
+[    3.562056] Freeing unused kernel image (initmem) memory: 2148K
+[    3.564552] Write protecting the kernel read-only data: 26624k
+[    3.568136] Freeing unused kernel image (text/rodata gap) memory: 2032K
+[    3.571379] Freeing unused kernel image (rodata/data gap) memory: 1096K
+[    3.574023] Run /init as init process
+
+Welcome to LinuxKit
+
+                        ##         .
+                  ## ## ##        ==
+               ## ## ## ## ##    ===
+           /"""""""""""""""""\___/ ===
+          {                       /  ===-
+           \______ O           __/
+             \    \         __/
+              \____\_______/
+
+Using cgroup v2
+2024/08/31 02:54:24 No random source available
+2024/08/31 02:54:24 WARN: Cannot write to /proc/sys/kernel/kptr_restrict: write /proc/sys/kernel/kptr_restrict: operation not permitted
+2024/08/31 02:54:24 WARN: Cannot write to /proc/sys/kernel/dmesg_restrict: write /proc/sys/kernel/dmesg_restrict: operation not permitted
+2024/08/31 02:54:24 WARN: Cannot write to /proc/sys/kernel/unprivileged_bpf_disabled: write /proc/sys/kernel/unprivileged_bpf_disabled: operation not permitted
+2024/08/31 02:54:24 Cannot read directory /etc/sysctl.d: open /etc/sysctl.d: no such file or directory
+modprobe: can't change directory to '/lib/modules': No such file or directory
+Running 'ip link show'...
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether 0a:45:7b:8c:38:77 brd ff:ff:ff:ff:ff:ff
+3: tunl0@NONE: <NOARP> mtu 1480 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ipip 0.0.0.0 brd 0.0.0.0
+4: ip6tnl0@NONE: <NOARP> mtu 1452 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/tunnel6 :: brd :: permaddr a61a:e5ac:1509::
+No vlan_id=xxxx set in kernel commandline; no VLAN handling.
+Done with VLAN handling.
+[    4.642470] 8021q: adding VLAN 0 to HW filter on device eth0
+sleep 1 second before calling ntpd
++ run_dhcp_client true
++ one_shot=true
++ al='eth*'
++ sed -n 's/.* vlan_id=\([0-9]*\).*/\1/p' /proc/cmdline
++ vlan_id=
++ '[' -n  ]
++ '[' true '=' true ]
++ /sbin/dhcpcd --nobackground -f /dhcpcd.conf --allowinterfaces 'eth*' -1
+dhcpcd-10.0.5 starting
+eth0: waiting for carrier
+eth0: carrier acquired
+DUID 00:01:00:01:2e:65:42:60:0a:45:7b:8c:38:77
+eth0: IAID 7b:8c:38:77
+eth0: adding address fe80::e6ff:c722:7a56:3676
+eth0: soliciting an IPv6 router
+eth0: soliciting a DHCP lease
+eth0: offered 10.0.2.15 from 10.0.2.2
+eth0: leased 10.0.2.15 for 86400 seconds
+eth0: adding route to 10.0.2.0/24
+eth0: adding default route via 10.0.2.2
+exiting due to oneshot
+dhcpcd exited
++ echo 'sleep 1 second before calling ntpd'
++ sleep 1
++ /usr/sbin/ntpd -n -q -dd -p pool.ntp.org
+ntpd: 'pool.ntp.org' is 104.167.241.253
+ntpd: sending query to 104.167.241.253
+ntpd: reply from 104.167.241.253: offset:+0.416395 delay:0.028822 status:0x24 strat:2 refid:0x80614e8b rootdelay:0.023865 reach:0x01
+ntpd: sending query to 104.167.241.253
+ntpd: reply from 104.167.241.253: offset:+0.416991 delay:0.028039 status:0x24 strat:2 refid:0x80614e8b rootdelay:0.023865 reach:0x03
+INFO[2024-08-31T02:54:26.294146817Z] starting containerd                           revision=8fc6bcff51318944179630522a095cc9dbf9f353 version=v1.7.20-0-g8fc6bcff5
+INFO[2024-08-31T02:54:26.344536454Z] loading plugin "io.containerd.snapshotter.v1.aufs"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.348444400Z] skip loading plugin "io.containerd.snapshotter.v1.aufs"...  error="aufs is not supported (modprobe aufs failed: exit status 1 \"modprobe: module aufs not found in modules.dep\\n\"): skip plugin" type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.348981185Z] loading plugin "io.containerd.event.v1.exchange"...  type=io.containerd.event.v1
+INFO[2024-08-31T02:54:26.349149023Z] loading plugin "io.containerd.internal.v1.opt"...  type=io.containerd.internal.v1
+WARN[2024-08-31T02:54:26.349336298Z] failed to load plugin io.containerd.internal.v1.opt  error="mkdir /opt/containerd/bin: read-only file system"
+INFO[2024-08-31T02:54:26.349632088Z] loading plugin "io.containerd.warning.v1.deprecations"...  type=io.containerd.warning.v1
+INFO[2024-08-31T02:54:26.349803052Z] loading plugin "io.containerd.snapshotter.v1.blockfile"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.349994515Z] skip loading plugin "io.containerd.snapshotter.v1.blockfile"...  error="no scratch file generator: skip plugin" type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.350115063Z] loading plugin "io.containerd.snapshotter.v1.btrfs"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.350454696Z] skip loading plugin "io.containerd.snapshotter.v1.btrfs"...  error="path /var/lib/containerd/io.containerd.snapshotter.v1.btrfs (tmpfs) must be a btrfs filesystem to be used with the btrfs snapshotter: skip plugin" type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.350943933Z] loading plugin "io.containerd.snapshotter.v1.devmapper"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.351142890Z] skip loading plugin "io.containerd.snapshotter.v1.devmapper"...  error="devmapper not configured: skip plugin" type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.351282034Z] loading plugin "io.containerd.snapshotter.v1.native"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.351639591Z] loading plugin "io.containerd.snapshotter.v1.overlayfs"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.351893282Z] loading plugin "io.containerd.snapshotter.v1.zfs"...  type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.352035551Z] skip loading plugin "io.containerd.snapshotter.v1.zfs"...  error="path /var/lib/containerd/io.containerd.snapshotter.v1.zfs must be a zfs filesystem to be used with the zfs snapshotter: skip plugin" type=io.containerd.snapshotter.v1
+INFO[2024-08-31T02:54:26.352098160Z] loading plugin "io.containerd.content.v1.content"...  type=io.containerd.content.v1
+INFO[2024-08-31T02:54:26.352286497Z] loading plugin "io.containerd.metadata.v1.bolt"...  type=io.containerd.metadata.v1
+INFO[2024-08-31T02:54:26.352607735Z] metadata content store policy set             policy=shared
+INFO[2024-08-31T02:54:26.352929485Z] loading plugin "io.containerd.gc.v1.scheduler"...  type=io.containerd.gc.v1
+INFO[2024-08-31T02:54:26.353114305Z] loading plugin "io.containerd.differ.v1.walking"...  type=io.containerd.differ.v1
+INFO[2024-08-31T02:54:26.353246155Z] loading plugin "io.containerd.lease.v1.manager"...  type=io.containerd.lease.v1
+INFO[2024-08-31T02:54:26.353410356Z] loading plugin "io.containerd.streaming.v1.manager"...  type=io.containerd.streaming.v1
+INFO[2024-08-31T02:54:26.353569677Z] loading plugin "io.containerd.runtime.v1.linux"...  type=io.containerd.runtime.v1
+INFO[2024-08-31T02:54:26.353794413Z] loading plugin "io.containerd.monitor.v1.cgroups"...  type=io.containerd.monitor.v1
+INFO[2024-08-31T02:54:26.391268108Z] loading plugin "io.containerd.runtime.v2.task"...  type=io.containerd.runtime.v2
+INFO[2024-08-31T02:54:26.391944944Z] loading plugin "io.containerd.runtime.v2.shim"...  type=io.containerd.runtime.v2
+INFO[2024-08-31T02:54:26.392017772Z] loading plugin "io.containerd.sandbox.store.v1.local"...  type=io.containerd.sandbox.store.v1
+INFO[2024-08-31T02:54:26.392189888Z] loading plugin "io.containerd.sandbox.controller.v1.local"...  type=io.containerd.sandbox.controller.v1
+INFO[2024-08-31T02:54:26.392363227Z] loading plugin "io.containerd.service.v1.containers-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.392706757Z] loading plugin "io.containerd.service.v1.content-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.392901256Z] loading plugin "io.containerd.service.v1.diff-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.393108378Z] loading plugin "io.containerd.service.v1.images-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.393274523Z] loading plugin "io.containerd.service.v1.introspection-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.393602995Z] loading plugin "io.containerd.service.v1.namespaces-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.393770332Z] loading plugin "io.containerd.service.v1.snapshots-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.393937148Z] loading plugin "io.containerd.service.v1.tasks-service"...  type=io.containerd.service.v1
+INFO[2024-08-31T02:54:26.394123091Z] loading plugin "io.containerd.grpc.v1.containers"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.394273355Z] loading plugin "io.containerd.grpc.v1.content"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.394631915Z] loading plugin "io.containerd.grpc.v1.diff"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.394815162Z] loading plugin "io.containerd.grpc.v1.events"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.394984272Z] loading plugin "io.containerd.grpc.v1.images"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.395151449Z] loading plugin "io.containerd.grpc.v1.introspection"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.395314147Z] loading plugin "io.containerd.grpc.v1.leases"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.395645415Z] loading plugin "io.containerd.grpc.v1.namespaces"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.395818743Z] loading plugin "io.containerd.grpc.v1.sandbox-controllers"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.395993644Z] loading plugin "io.containerd.grpc.v1.sandboxes"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.396155451Z] loading plugin "io.containerd.grpc.v1.snapshots"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.396325683Z] loading plugin "io.containerd.grpc.v1.streaming"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.396675987Z] loading plugin "io.containerd.grpc.v1.tasks"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.396832043Z] loading plugin "io.containerd.transfer.v1.local"...  type=io.containerd.transfer.v1
+INFO[2024-08-31T02:54:26.397062279Z] loading plugin "io.containerd.grpc.v1.transfer"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.397160375Z] loading plugin "io.containerd.grpc.v1.version"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.397323684Z] loading plugin "io.containerd.internal.v1.restart"...  type=io.containerd.internal.v1
+INFO[2024-08-31T02:54:26.397733751Z] loading plugin "io.containerd.tracing.processor.v1.otlp"...  type=io.containerd.tracing.processor.v1
+INFO[2024-08-31T02:54:26.398177371Z] skip loading plugin "io.containerd.tracing.processor.v1.otlp"...  error="skip plugin: tracing endpoint not configured" type=io.containerd.tracing.processor.v1
+INFO[2024-08-31T02:54:26.398323919Z] loading plugin "io.containerd.internal.v1.tracing"...  type=io.containerd.internal.v1
+INFO[2024-08-31T02:54:26.398716983Z] skip loading plugin "io.containerd.internal.v1.tracing"...  error="skip plugin: tracing endpoint not configured" type=io.containerd.internal.v1
+INFO[2024-08-31T02:54:26.439678393Z] loading plugin "io.containerd.grpc.v1.healthcheck"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.439871199Z] loading plugin "io.containerd.nri.v1.nri"...  type=io.containerd.nri.v1
+INFO[2024-08-31T02:54:26.440063653Z] NRI interface is disabled by configuration.  
+INFO[2024-08-31T02:54:26.440185975Z] loading plugin "io.containerd.grpc.v1.cri"...  type=io.containerd.grpc.v1
+INFO[2024-08-31T02:54:26.440895008Z] Start cri plugin with config {PluginConfig:{ContainerdConfig:{Snapshotter:overlayfs DefaultRuntimeName:runc DefaultRuntime:{Type: Path: Engine: PodAnnotations:[] ContainerAnnotations:[] Root: Options:map[] PrivilegedWithoutHostDevices:false PrivilegedWithoutHostDevicesAllDevicesAllowed:false BaseRuntimeSpec: NetworkPluginConfDir: NetworkPluginMaxConfNum:0 Snapshotter: SandboxMode:} UntrustedWorkloadRuntime:{Type: Path: Engine: PodAnnotations:[] ContainerAnnotations:[] Root: Options:map[] PrivilegedWithoutHostDevices:false PrivilegedWithoutHostDevicesAllDevicesAllowed:false BaseRuntimeSpec: NetworkPluginConfDir: NetworkPluginMaxConfNum:0 Snapshotter: SandboxMode:} Runtimes:map[runc:{Type:io.containerd.runc.v2 Path: Engine: PodAnnotations:[] ContainerAnnotations:[] Root: Options:map[BinaryName: CriuImagePath: CriuPath: CriuWorkPath: IoGid:0 IoUid:0 NoNewKeyring:false NoPivotRoot:false Root: ShimCgroup: SystemdCgroup:false] PrivilegedWithoutHostDevices:false PrivilegedWithoutHostDevicesAllDevicesAllowed:false BaseRuntimeSpec: NetworkPluginConfDir: NetworkPluginMaxConfNum:0 Snapshotter: SandboxMode:podsandbox}] NoPivot:false DisableSnapshotAnnotations:true DiscardUnpackedLayers:false IgnoreBlockIONotEnabledErrors:false IgnoreRdtNotEnabledErrors:false} CniConfig:{NetworkPluginBinDir:/opt/cni/bin NetworkPluginConfDir:/etc/cni/net.d NetworkPluginMaxConfNum:1 NetworkPluginSetupSerially:false NetworkPluginConfTemplate: IPPreference:} Registry:{ConfigPath: Mirrors:map[] Configs:map[] Auths:map[] Headers:map[]} ImageDecryption:{KeyModel:node} DisableTCPService:true StreamServerAddress:127.0.0.1 StreamServerPort:0 StreamIdleTimeout:4h0m0s EnableSelinux:false SelinuxCategoryRange:1024 SandboxImage:registry.k8s.io/pause:3.8 StatsCollectPeriod:10 SystemdCgroup:false EnableTLSStreaming:false X509KeyPairStreaming:{TLSCertFile: TLSKeyFile:} MaxContainerLogLineSize:16384 DisableCgroup:false DisableApparmor:false RestrictOOMScoreAdj:false MaxConcurrentDownloads:3 DisableProcMount:false UnsetSeccompProfile: TolerateMissingHugetlbController:true DisableHugetlbController:true DeviceOwnershipFromSecurityContext:false IgnoreImageDefinedVolumes:false NetNSMountsUnderStateDir:false EnableUnprivilegedPorts:false EnableUnprivilegedICMP:false EnableCDI:false CDISpecDirs:[/etc/cdi /var/run/cdi] ImagePullProgressTimeout:5m0s DrainExecSyncIOTimeout:0s ImagePullWithSyncFs:false IgnoreDeprecationWarnings:[]} ContainerdRootDir:/var/lib/containerd ContainerdEndpoint:/run/containerd/containerd.sock RootDir:/var/lib/containerd/io.containerd.grpc.v1.cri StateDir:/run/containerd/io.containerd.grpc.v1.cri} 
+INFO[2024-08-31T02:54:26.441367453Z] Connect containerd service                   
+INFO[2024-08-31T02:54:26.441710794Z] using legacy CRI server                      
+INFO[2024-08-31T02:54:26.441834919Z] using experimental NRI integration - disable nri plugin to prevent this 
+INFO[2024-08-31T02:54:26.442136220Z] Get image filesystem path "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs" 
+WARN[2024-08-31T02:54:26.442650474Z] failed to load plugin io.containerd.grpc.v1.cri  error="failed to create CRI service: failed to create cni conf monitor for default: failed to create the parent of the cni conf dir=/etc/cni: mkdir /etc/cni: read-only file system"
+INFO[2024-08-31T02:54:26.443190136Z] serving...                                    address=/run/containerd/containerd.sock.ttrpc
+INFO[2024-08-31T02:54:26.443406757Z] serving...                                    address=/run/containerd/containerd.sock
+INFO[2024-08-31T02:54:26.443728246Z] containerd successfully booted in 0.152322s  
+time="2024-08-31T02:54:26.506778733Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.506815302Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.506825952Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.512343716Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.562492908Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.562579973Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.562597225Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.562690141Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+getty: starting getty for ttyS0
+
+linuxkit-0a457b8c3877 login: root (automatic login)
+
+Welcome to HookOS! Your Tinkerbell operating system installation environment.
+
+██   ██                   ██       ██████  ███████
+██   ██  ██████   ██████  ██  ██  ██    ██ ██
+███████ ██    ██ ██    ██ █████   ██    ██ ███████
+██   ██ ██    ██ ██    ██ ██  ██  ██    ██      ██
+██   ██  ██████   ██████  ██   ██  ██████  ███████
+
+- Hook flavor hook-default-amd64 version 0.9.1 / Kernel version latest
+- Use `docker` commands to access the tink worker/agent container and workflow action containers.
+- Logs are located in the `/var/log/` directory.
+- Use `docker logs tink-worker --follow` to watch the worker logs.
+login[18]: root login on 'ttyS0'
+(ns: getty) HookOS 0.9.1:~# time="2024-08-31T02:54:26.608576261Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.608644731Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.613649039Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.615697265Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.647742050Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.647776185Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.647784801Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.647855194Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.688328724Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.690445679Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.690461128Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.690553263Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.737547094Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.737585798Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.737596388Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.737671279Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.786326331Z" level=info msg="loading plugin \"io.containerd.event.v1.publisher\"..." runtime=io.containerd.runc.v2 type=io.containerd.event.v1
+time="2024-08-31T02:54:26.786358001Z" level=info msg="loading plugin \"io.containerd.internal.v1.shutdown\"..." runtime=io.containerd.runc.v2 type=io.containerd.internal.v1
+time="2024-08-31T02:54:26.786365856Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.task\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
+time="2024-08-31T02:54:26.786410511Z" level=info msg="loading plugin \"io.containerd.ttrpc.v1.pause\"..." runtime=io.containerd.runc.v2 type=io.containerd.ttrpc.v1
